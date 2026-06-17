@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>iCorner — CCF Welcome Center Kiosk</title>
+<style>
+  :root {
+    --sky-bg: #C5E4F0;
+    --tile: #8FC8DD;
+    --headline: #1FA3C0;
+    --cta: #C62828;
+    --text: #2D3748;
+    --muted: #4A5568;
+    --engage: #F5C518;
+    --edify: #8BC34A;
+    --equip: #2E9DF7;
+    --empower: #8B1A1A;
+    --border: #1A202C;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background: #0a0a0a;
+    overflow: hidden;
+  }
+  .deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: var(--sky-bg);
+    padding: 4vh 6vw;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    animation: fadeIn 0.4s ease;
+  }
+  .slide.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  h1 { font-size: clamp(2rem, 5vw, 4rem); color: var(--headline); font-weight: 900; letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 0.5em; }
+  h2 { font-size: clamp(1.5rem, 3.5vw, 2.5rem); color: var(--headline); font-weight: 800; margin-bottom: 0.6em; }
+  h3 { font-size: clamp(1.1rem, 2vw, 1.5rem); color: var(--text); font-weight: 700; margin-bottom: 0.4em; }
+  p, li { font-size: clamp(1rem, 1.5vw, 1.25rem); line-height: 1.6; color: var(--text); }
+  .muted { color: var(--muted); }
+  ul { margin-left: 1.5em; margin-top: 0.5em; }
+  li { margin-bottom: 0.4em; }
+  strong { color: var(--headline); font-weight: 700; }
+
+  .slide-num {
+    position: absolute;
+    top: 1.5vh; right: 2vw;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .nav {
+    position: fixed;
+    bottom: 2vh; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 1rem;
+    background: rgba(255,255,255,0.9);
+    padding: 0.6rem 1.2rem;
+    border-radius: 999px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 100;
+  }
+  .nav button {
+    background: var(--headline);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .nav button:hover { background: var(--cta); }
+  .nav .counter { align-self: center; font-weight: 700; color: var(--text); font-size: 0.9rem; }
+
+  /* SLIDE 1 — Hero / Reu's design */
+  .hero-card {
+    margin: auto;
+    width: min(80vh, 90%);
+    max-width: 700px;
+    aspect-ratio: 3/4;
+    background: var(--sky-bg);
+    border: 6px solid var(--border);
+    border-radius: 40px;
+    padding: 5% 7%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .hero-headline {
+    font-size: clamp(2.5rem, 7vh, 5rem);
+    color: var(--headline);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.3em;
+  }
+  .hero-sub {
+    font-size: clamp(1rem, 2.2vh, 1.4rem);
+    color: var(--text);
+    margin-bottom: 1.5em;
+    max-width: 80%;
+  }
+  .hero-cta {
+    font-size: clamp(1.5rem, 4vh, 2.5rem);
+    color: var(--cta);
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    margin-bottom: 1em;
+  }
+  .tiles {
+    display: flex;
+    gap: 4%;
+    justify-content: center;
+    width: 100%;
+    flex: 1;
+    margin-bottom: 1em;
+  }
+  .tile {
+    flex: 1;
+    background: var(--tile);
+    border: 4px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem 0.5rem;
+    font-weight: 700;
+    font-size: clamp(0.7rem, 1.5vh, 1rem);
+    color: var(--text);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    line-height: 1.2;
+  }
+  .hero-footer {
+    font-size: clamp(0.9rem, 1.8vh, 1.1rem);
+    color: var(--text);
+  }
+
+  /* Stage badges */
+  .stages {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .stage {
+    background: white;
+    border-radius: 12px;
+    padding: 1.2rem 1rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-top: 6px solid var(--engage);
+  }
+  .stage.edify { border-top-color: var(--edify); }
+  .stage.equip { border-top-color: var(--equip); }
+  .stage.empower { border-top-color: var(--empower); }
+  .stage-dot { width: 24px; height: 24px; border-radius: 50%; margin: 0 auto 0.5rem; }
+  .stage h4 { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 0.3em; }
+  .stage p { font-size: 0.85rem; color: var(--muted); }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.9rem; }
+  th { background: var(--headline); color: white; font-weight: 700; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-weight: 700; font-size: 0.75rem; color: white; }
+  .b-engage { background: var(--engage); color: var(--text); }
+  .b-edify { background: var(--edify); }
+  .b-equip { background: var(--equip); }
+  .b-empower { background: var(--empower); }
+
+  /* Architecture diagram */
+  .arch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 0.95rem;
+  }
+  .arch-box {
+    background: white;
+    border: 2px solid var(--headline);
+    border-radius: 10px;
+    padding: 0.8rem 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .arch-box.source { border-color: var(--equip); }
+  .arch-box.icorner { border-color: var(--cta); background: #FFF5F5; }
+  .arch-arrow { color: var(--muted); font-weight: 700; font-size: 1.2rem; }
+
+  /* Two-column */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+  .col-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+  /* Pill list */
+  .pill-list { list-style: none; margin: 0; padding: 0; }
+  .pill-list li { background: white; padding: 0.8rem 1.2rem; border-radius: 10px; margin-bottom: 0.6rem; box-shadow: 0 2px 6px rgba(0,0,0,0.06); border-left: 5px solid var(--headline); }
+  .pill-list li strong { color: var(--cta); }
+
+  /* Timeline */
+  .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.5rem; }
+  .week { background: white; border-radius: 12px; padding: 1.2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-top: 5px solid var(--headline); }
+  .week h4 { color: var(--headline); font-size: 1rem; margin-bottom: 0.5em; }
+  .week p { font-size: 0.85rem; color: var(--text); }
+
+  /* Demo link */
+  .demo-link {
+    display: inline-block;
+    background: var(--cta);
+    color: white !important;
+    padding: 0.8rem 1.6rem;
+    border-radius: 999px;
+    font-weight: 800;
+    text-decoration: none;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    box-shadow: 0 4px 12px rgba(198,40,40,0.3);
+  }
+  .demo-link:hover { background: #A01F1F; }
+
+  /* Subtitle wrapper */
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-bottom: 1.5em; font-style: italic; }
+
+  /* Print / fullscreen tweaks */
+  @media print {
+    .nav { display: none; }
+    .slide { display: flex !important; page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- SLIDE 1: Hero (Kuya Reu's design) -->
+  <section class="slide active" data-slide="1">
+    <div class="slide-num">1 / 10</div>
+    <div class="hero-card">
+      <div class="hero-headline">WHAT'S NEXT?</div>
+      <p class="hero-sub">See where God is leading you in your Discipleship Journey</p>
+      <div class="hero-cta">EXPLORE</div>
+      <div class="tiles">
+        <div class="tile">Discipleship Journey</div>
+        <div class="tile">Division Calendars</div>
+        <div class="tile">Monthly Calendars</div>
+      </div>
+      <p class="hero-footer">Not sure where to start?<br/>Ask the Assistant</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 2: The Problem -->
+  <section class="slide" data-slide="2">
+    <div class="slide-num">2 / 10</div>
+    <h2>The Problem We Hear Every Sunday</h2>
+    <p class="subtitle">At the Welcome Center, inquirers consistently ask three questions:</p>
+    <ol style="margin-left: 2rem; margin-top: 1rem;">
+      <li style="font-size: 1.4rem; margin-bottom: 0.8em;"><strong>"Where do I start?"</strong></li>
+      <li style="font-size: 1.4rem; margin-bottom: 0.8em;"><strong>"Is there a Couples Retreat / GLC / Men's Fellowship coming up?"</strong></li>
+      <li style="font-size: 1.4rem; margin-bottom: 0.8em;"><strong>"How do I sign up?"</strong></li>
+    </ol>
+    <div style="margin-top: 2rem; background: white; padding: 1.5rem; border-radius: 12px; border-left: 6px solid var(--cta);">
+      <p><strong>Today:</strong> Volunteers answer from memory, printed flyers, or phone screens — often with outdated info.</p>
+      <p style="margin-top: 0.8em;"><strong>The cost:</strong> Inquirers walk away with incomplete next steps. Ministries lose first-touch momentum.</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 3: The Vision -->
+  <section class="slide" data-slide="3">
+    <div class="slide-num">3 / 10</div>
+    <h2>iCorner — A Touchscreen Kiosk at the Welcome Center</h2>
+    <p class="subtitle">Self-serve discovery in under 2 minutes</p>
+    <ul class="pill-list" style="margin-top: 1.5rem;">
+      <li>🧭 <strong>Self-serve discovery</strong> — inquirers find their next step without waiting in line</li>
+      <li>📅 <strong>Always-current calendar</strong> — reads from CCF's existing event system</li>
+      <li>🤝 <strong>Clear handoff</strong> — register online (QR), visit ministry booth, or call PA rep</li>
+      <li>💬 <strong>Optional AI assistant</strong> — English / Tagalog / Taglish</li>
+      <li>📊 <strong>Anonymous analytics</strong> — what inquirers actually look for</li>
+    </ul>
+    <p style="margin-top: 1.5rem; font-style: italic; color: var(--cta); font-weight: 700;">Not replacing volunteers — empowering them.</p>
+  </section>
+
+  <!-- SLIDE 4: Discipleship Journey alignment -->
+  <section class="slide" data-slide="4">
+    <div class="slide-num">4 / 10</div>
+    <h2>Aligned with the CCF Discipleship Journey</h2>
+    <p class="subtitle">Every event is tagged to one of the four official stages.</p>
+    <div class="stages">
+      <div class="stage">
+        <div class="stage-dot" style="background: var(--engage);"></div>
+        <h4>🟡 Engage</h4>
+        <p>Build relationships and share Jesus</p>
+      </div>
+      <div class="stage edify">
+        <div class="stage-dot" style="background: var(--edify);"></div>
+        <h4>🟢 Edify</h4>
+        <p>Grow together in a Dgroup</p>
+      </div>
+      <div class="stage equip">
+        <div class="stage-dot" style="background: var(--equip);"></div>
+        <h4>🔵 Equip</h4>
+        <p>Start leading a Dgroup</p>
+      </div>
+      <div class="stage empower">
+        <div class="stage-dot" style="background: var(--empower);"></div>
+        <h4>🔴 Empower</h4>
+        <p>Help others start their Dgroup</p>
+      </div>
+    </div>
+    <p style="margin-top: 1.5rem; padding: 1rem; background: white; border-radius: 10px; border-left: 5px solid var(--edify);">
+      ✅ <strong>This is already how Sis Judy's master tracker is structured.</strong> iCorner mirrors how CCF leadership already thinks about events.
+    </p>
+  </section>
+
+  <!-- SLIDE 5: Four-Layer Architecture -->
+  <section class="slide" data-slide="5">
+    <div class="slide-num">5 / 10</div>
+    <h2>Four Lenses, One Database</h2>
+    <p class="subtitle">The same calendar viewed four ways — no duplicate data entry.</p>
+    <div class="cols" style="margin-top: 1.5rem;">
+      <div class="col-card">
+        <h3>1️⃣ Main Database Entities</h3>
+        <p class="muted">GLC · Ministries · Pastoral Areas</p>
+        <p style="margin-top:0.5em; font-size: 0.85rem;"><em>What exists</em></p>
+      </div>
+      <div class="col-card">
+        <h3>2️⃣ Discipleship Journey Calendar</h3>
+        <p class="muted">Engage → Edify → Equip → Empower</p>
+        <p style="margin-top:0.5em; font-size: 0.85rem;"><em>The journey lens</em></p>
+      </div>
+      <div class="col-card">
+        <h3>3️⃣ Division Calendars</h3>
+        <p class="muted">GLC · Ministries · Pastoral Areas</p>
+        <p style="margin-top:0.5em; font-size: 0.85rem;"><em>The organization lens</em></p>
+      </div>
+      <div class="col-card">
+        <h3>4️⃣ Monthly Calendars</h3>
+        <p class="muted">January through December</p>
+        <p style="margin-top:0.5em; font-size: 0.85rem;"><em>The time lens</em></p>
+      </div>
+    </div>
+    <p style="margin-top: 1.5rem; font-style: italic; text-align: center; color: var(--cta); font-weight: 700;">
+      One event entry = visible in all four views.
+    </p>
+  </section>
+
+  <!-- SLIDE 6: Sis Judy's tracker -->
+  <section class="slide" data-slide="6">
+    <div class="slide-num">6 / 10</div>
+    <h2>Sis Judy's Tracker Maps Directly to iCorner</h2>
+    <p class="subtitle">From the May–Sept 2026 master sheet:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>Originator</th>
+          <th>Activity</th>
+          <th>When</th>
+          <th>Where</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge b-equip">EQUIP</span></td>
+          <td>D-Discipleship Mgt</td>
+          <td>Let's Connect Dgroup Fair</td>
+          <td>May 31</td>
+          <td>GF Annex</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-edify">EDIFY</span></td>
+          <td>D-GLC</td>
+          <td>True Life Retreat</td>
+          <td>May 29–30</td>
+          <td>MPH, CCF Ctr</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-equip">EQUIP</span></td>
+          <td>P-Bert Vila</td>
+          <td>Pastoral Area Gathering</td>
+          <td>Jun 6, 20 & Jul 11</td>
+          <td>2F Annex</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-equip">EQUIP</span></td>
+          <td>P-Sarthou (4 PAs)</td>
+          <td>Unite</td>
+          <td>Jun 12–14</td>
+          <td>MMRC Batangas</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-edify">EDIFY</span></td>
+          <td>D-GLC</td>
+          <td>True Life: Redeemed</td>
+          <td>Sep 11–12</td>
+          <td>CCF Social Hall</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top: 1.5rem; font-weight: 700; color: var(--cta);">
+      iCorner reads this tracker — no new data entry required. Sis Judy's sheet <em>is</em> the source of truth.
+    </p>
+  </section>
+
+  <!-- SLIDE 7: Architecture -->
+  <section class="slide" data-slide="7">
+    <div class="slide-num">7 / 10</div>
+    <h2>How It Connects</h2>
+    <p class="subtitle">iCorner is a <strong>read-only consumer</strong> — not a parallel system.</p>
+    <div class="arch">
+      <div class="arch-box">Ministries · GLC · Pastoral Areas</div>
+      <div class="arch-arrow">↓ in-app form submission</div>
+      <div class="arch-box source">Main Event System (Wax) — source of truth</div>
+      <div class="arch-arrow">↓ read-only API</div>
+      <div class="arch-box icorner">iCorner Kiosk · Azure Static Web Apps</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-box">Inquirer at the Welcome Center</div>
+    </div>
+    <div class="cols" style="margin-top: 1.5rem;">
+      <div class="col-card">
+        <h3>Stack (Microsoft-native)</h3>
+        <p>Next.js on Azure Static Web Apps · Entra ID (read-only) · Claude API for assistant</p>
+      </div>
+      <div class="col-card">
+        <h3>Cost</h3>
+        <p>Azure hosting: <strong>$0–9/mo</strong><br/>Claude API: <strong>$15–30/mo</strong><br/><strong>Total: ~$15–30/month</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8: Live Demo -->
+  <section class="slide" data-slide="8">
+    <div class="slide-num">8 / 10</div>
+    <h2>Live Demo</h2>
+    <p class="subtitle">Deployed today on Azure Static Web Apps:</p>
+    <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); text-align: center; margin-top: 1rem;">
+      <p style="font-family: monospace; font-size: 1.1rem; color: var(--text); word-break: break-all;">
+        https://mango-rock-03cc67610.7.azurestaticapps.net
+      </p>
+      <a href="https://mango-rock-03cc67610.7.azurestaticapps.net" target="_blank" class="demo-link">Open Demo →</a>
+    </div>
+    <div class="cols" style="margin-top: 2rem;">
+      <div class="col-card">
+        <h3>✅ Working today</h3>
+        <ul style="font-size: 0.95rem;">
+          <li>Landing page deployed</li>
+          <li>Mock data flowing</li>
+          <li>Azure infra live</li>
+          <li>Visual matches Kuya Reu's mockup</li>
+        </ul>
+      </div>
+      <div class="col-card">
+        <h3>⏳ Needs to be unlocked</h3>
+        <ul style="font-size: 0.95rem;">
+          <li>Connect to Wax's Main Event System</li>
+          <li>Integrate Sis Judy's tracker</li>
+          <li>Azure AD app registration (Bro Ronnie)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 9: Team Asks -->
+  <section class="slide" data-slide="9">
+    <div class="slide-num">9 / 10</div>
+    <h2>What We Need From Each Team</h2>
+    <table>
+      <thead>
+        <tr><th>Team / Person</th><th>Ask</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Bro Fran</strong><br/>Digital Transformation</td><td>Endorsement of the read-only consumer model</td></tr>
+        <tr><td><strong>Bro Ronnie</strong><br/>IT</td><td>Azure AD app registration with read-only scope</td></tr>
+        <tr><td><strong>Wax</strong><br/>Mobile App / Event System</td><td>Read-only API endpoint + event schema</td></tr>
+        <tr><td><strong>Ven</strong><br/>Content</td><td>Decide which events surface on iCorner</td></tr>
+        <tr><td><strong>Sis Judy</strong><br/>Discipleship Mgt</td><td>Continue tracker as input model; tag journey stage per event</td></tr>
+        <tr><td><strong>Kuya Reu</strong><br/>Welcome Center</td><td>Pilot with 2–3 ministries; on-call PA rep roster; design direction</td></tr>
+        <tr><td><strong>Comms</strong></td><td>Final visual identity review</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SLIDE 10: Timeline & Next Steps -->
+  <section class="slide" data-slide="10">
+    <div class="slide-num">10 / 10</div>
+    <h2>4-Week MVP Once Data Access Is Granted</h2>
+    <div class="timeline">
+      <div class="week">
+        <h4>Week 1</h4>
+        <p>Integrate Main Event System API + import Sis Judy's tracker</p>
+      </div>
+      <div class="week">
+        <h4>Week 2</h4>
+        <p>Build all four calendar views with live data</p>
+      </div>
+      <div class="week">
+        <h4>Week 3</h4>
+        <p>Wire up Claude AI assistant + journey-stage tagging</p>
+      </div>
+      <div class="week">
+        <h4>Week 4</h4>
+        <p>Pilot with Elevate, WOW, GLC. Train volunteers.</p>
+      </div>
+    </div>
+    <div style="margin-top: 2rem; background: white; padding: 1.5rem; border-radius: 12px; border-left: 6px solid var(--cta);">
+      <h3 style="color: var(--cta);">Decisions we'd love to walk out with today:</h3>
+      <ol style="margin-left: 1.5rem; margin-top: 0.8em;">
+        <li>✅ Approve the read-only consumer model?</li>
+        <li>🔐 Schedule Azure AD app registration with Bro Ronnie?</li>
+        <li>🗓️ Set follow-up meeting with Wax to align on the API?</li>
+      </ol>
+    </div>
+    <p style="text-align: center; margin-top: 2rem; font-size: 1.3rem; font-weight: 700; color: var(--headline);">
+      Thank you. Salamat po. 🙏
+    </p>
+  </section>
+
+</div>
+
+<nav class="nav">
+  <button onclick="prev()">←</button>
+  <span class="counter" id="counter">1 / 10</span>
+  <button onclick="next()">→</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+  function show(i) {
+    slides.forEach(s => s.classList.remove('active'));
+    slides[i].classList.add('active');
+    document.getElementById('counter').textContent = `${i + 1} / ${slides.length}`;
+    current = i;
+  }
+  function next() { if (current < slides.length - 1) show(current + 1); }
+  function prev() { if (current > 0) show(current - 1); }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') next();
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') prev();
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+    if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen();
+  });
+</script>
+
+</body>
+</html>

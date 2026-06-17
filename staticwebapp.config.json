@@ -1,0 +1,18 @@
+{
+  "trailingSlash": "always",
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/_next/*", "/images/*", "*.css", "*.js", "*.ico", "*.png", "*.jpg", "*.svg"]
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  },
+  "routes": [
+    {
+      "route": "/_next/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    }
+  ]
+}

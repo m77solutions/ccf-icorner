@@ -1,49 +1,113 @@
-import { fetchEvents } from '@/lib/eventSource';
-import { CCF_BRAND, type JourneyStage } from '@/lib/ccfBrand';
-import { format } from 'date-fns';
 import Link from 'next/link';
+import { getEventsByJourneyStage } from '@/lib/events-data';
+import { STAGES, STAGE_COLORS } from '@/lib/events';
 
-const STAGES: JourneyStage[] = ['Engage', 'Edify', 'Equip', 'Empower'];
-
-export default async function JourneyPage() {
-  const events = await fetchEvents();
-
+export default function JourneyHubPage() {
   return (
-    <main className="min-h-screen bg-[#FAFAF7] p-6 md:p-10">
-      <Link href="/" className="text-blue-600 mb-4 inline-block">← Back to home</Link>
+    <main style={{ minHeight: '100vh', background: '#C5E4F0', padding: '40px 20px' }}>
+      <style>{`
+        .journey-card {
+          transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .journey-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 10px 10px 0 rgba(0,0,0,0.18);
+        }
+        .stage-icon {
+          font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+          font-size: 64px;
+          line-height: 1;
+          display: block;
+          margin-bottom: 12px;
+          font-variant-emoji: emoji;
+        }
+      `}</style>
 
-      <header className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">🧭 Discipleship Journey Calendar</h1>
-        <p className="text-lg text-slate-600 mt-2">Explore the CCF Discipleship Journey</p>
-      </header>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <Link href="/" style={{ color: '#1FA3C0', textDecoration: 'none', fontWeight: 700 }}>
+          ← Back to Welcome
+        </Link>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-7xl mx-auto">
-        {STAGES.map(stage => {
-          const cfg = CCF_BRAND.journey[stage];
-          const stageEvents = events.filter(e => e.journey_stage === stage);
-          return (
-            <div key={stage} className="bg-white rounded-2xl overflow-hidden shadow border-t-8" style={{ borderTopColor: cfg.hex }}>
-              <div className="p-5 text-center" style={{ backgroundColor: `${cfg.hex}15` }}>
-                <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: cfg.hex }}></div>
-                <h2 className="text-2xl font-bold lowercase" style={{ color: cfg.hex }}>{cfg.label}</h2>
-                <p className="text-sm text-slate-600 mt-1 italic">{cfg.tagline}</p>
-              </div>
-              <div className="p-4 space-y-3 min-h-[300px]">
-                {stageEvents.length === 0 ? (
-                  <p className="text-slate-400 text-sm italic text-center pt-8">Coming soon</p>
-                ) : (
-                  stageEvents.map(e => (
-                    <div key={e.id} className="bg-slate-50 rounded-lg p-3 text-sm">
-                      <div className="font-semibold">{e.title}</div>
-                      <div className="text-slate-600 mt-1">📅 {format(new Date(e.start_datetime), 'MMM d')}</div>
-                      <div className="text-xs text-slate-500 mt-1">[{e.division === 'Ministries' ? 'Min' : e.division === 'GLC' ? 'GLC' : 'PA'}]</div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          );
-        })}
+        <h1 style={{ fontSize: 52, fontWeight: 900, color: '#1FA3C0', marginTop: 20, textAlign: 'center', letterSpacing: 1 }}>
+          DISCIPLESHIP JOURNEY
+        </h1>
+        <p style={{ textAlign: 'center', color: '#2D3748', fontSize: 18, marginBottom: 8 }}>
+          Where is God leading you next?
+        </p>
+        <p style={{ textAlign: 'center', color: '#64748B', fontSize: 14, marginBottom: 40, fontStyle: 'italic' }}>
+          Engage → Edify → Equip → Empower
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+          {STAGES.map((stage) => {
+            const c = STAGE_COLORS[stage.label];
+            const events = getEventsByJourneyStage(stage.id);
+            return (
+              <Link
+                key={stage.id}
+                href={`/journey/${stage.id}`}
+                className="journey-card"
+                style={{
+                  display: 'block',
+                  background: '#FFFFFF',
+                  border: `3px solid ${c.border}`,
+                  borderRadius: 16,
+                  padding: 24,
+                  textDecoration: 'none',
+                  color: '#2D3748',
+                  boxShadow: '6px 6px 0 rgba(0,0,0,0.15)',
+                }}
+              >
+                <span
+                  className="stage-icon"
+                  style={{
+                    background: c.bg,
+                    width: 88,
+                    height: 88,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 14,
+                    border: `3px solid ${c.border}`,
+                  }}
+                >
+                  {stage.icon}
+                </span>
+                <h2 style={{ fontSize: 26, fontWeight: 900, color: c.text, margin: 0, letterSpacing: 0.5 }}>
+                  {stage.label.toUpperCase()}
+                </h2>
+                <p style={{ fontSize: 14, color: '#475569', marginTop: 8, lineHeight: 1.5 }}>
+                  {stage.description}
+                </p>
+                <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 10, fontStyle: 'italic', lineHeight: 1.4 }}>
+                  {stage.audience}
+                </p>
+                <div
+                  style={{
+                    marginTop: 16,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingTop: 14,
+                    borderTop: `2px solid ${c.bg}`,
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>
+                    {events.length} {events.length === 1 ? 'activity' : 'activities'}
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#C62828' }}>
+                    Explore →
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        <p style={{ textAlign: 'center', color: '#64748B', fontSize: 13, marginTop: 40, fontStyle: 'italic' }}>
+          💡 Not sure which stage you&apos;re in? Ask the Welcome Center Assistant 💬
+        </p>
       </div>
     </main>
   );

@@ -2,116 +2,184 @@ import Link from 'next/link';
 
 export default function Landing() {
   return (
-    <main className="min-h-screen bg-[#FAFAF7] p-8 md:p-12">
-      <header className="text-center mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
-          🙏 Welcome to CCF Main Welcome Center
-        </h1>
-        <p className="mt-3 text-lg text-slate-700">
-          Discover where God is leading you in your journey
+    <main style={styles.main}>
+      <header style={styles.header}>
+
+<Link href="/" style={{ display: 'block', textAlign: 'center', marginBottom: 16 }}>
+  <img
+    src="/welcome-logo.png"
+    alt="Welcome"
+    style={{
+      maxWidth: 320,
+      width: '60%',
+      height: 'auto',
+      cursor: 'pointer',
+      display: 'inline-block',
+    }}
+  />
+</Link>
+
+        <h1 style={styles.headline}>WHAT&apos;S NEXT?</h1>
+        <p style={styles.subtitle}>
+          See where God is leading you in your Discipleship Journey
         </p>
       </header>
 
-      <section className="max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-slate-900">✨ What's Next?</h2>
-          <p className="text-lg text-slate-700 mt-2">
-            How would you like to explore today?
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link
-            href="/journey"
-            className="block bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition border-2 border-slate-200 hover:border-blue-400"
-          >
-            <div className="text-4xl mb-3">🧭</div>
-            <h3 className="text-2xl font-bold mb-4 text-slate-900">
-              Discipleship Journey Calendar
-            </h3>
-            <div className="flex flex-wrap gap-3 mb-4 text-sm text-slate-800">
-              <span className="flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-[#F5C518] inline-block"></span>
-                Engage
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-[#8BC34A] inline-block"></span>
-                Edify
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-[#2E9DF7] inline-block"></span>
-                Equip
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-[#8B1A1A] inline-block"></span>
-                Empower
-              </span>
-            </div>
-            <p className="text-slate-600 italic mb-4">
-              "Check activities in the Discipleship Journey"
-            </p>
-            <span className="text-blue-700 font-semibold">Explore →</span>
-          </Link>
-
-          <Link
-            href="/division/ministries"
-            className="block bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition border-2 border-slate-200 hover:border-blue-400"
-          >
-            <div className="text-4xl mb-3">🏛️</div>
-            <h3 className="text-2xl font-bold mb-4 text-slate-900">
-              Division Calendars
-            </h3>
-            <p className="text-slate-700 mb-4">
-              GLC · Ministries · Pastoral Areas
-            </p>
-            <p className="text-slate-600 italic mb-4">"What is [X] doing next?"</p>
-            <span className="text-blue-700 font-semibold">Explore →</span>
-          </Link>
-
-          <Link
-            href="/month/current"
-            className="block bg-white rounded-2xl p-8 shadow-md hover:shadow-xl transition border-2 border-slate-200 hover:border-blue-400"
-          >
-            <div className="text-4xl mb-3">📅</div>
-            <h3 className="text-2xl font-bold mb-4 text-slate-900">
-              Monthly Calendars
-            </h3>
-            <p className="text-slate-700 mb-4">January to December</p>
-            <p className="text-slate-600 italic mb-4">
-              "What's happening this month?"
-            </p>
-            <span className="text-blue-700 font-semibold">Explore →</span>
-          </Link>
-        </div>
-
-        <div className="mt-10 text-center">
-          <p className="text-slate-700 mb-3">📚 Or browse the database:</p>
-          <div className="flex gap-3 justify-center flex-wrap">
-            <Link
-              href="/division/glc"
-              className="px-5 py-2 bg-white border-2 border-slate-300 rounded-full text-slate-800 font-medium hover:bg-slate-100 hover:border-blue-400"
-            >
-              GLC
-            </Link>
-            <Link
-              href="/division/ministries"
-              className="px-5 py-2 bg-white border-2 border-slate-300 rounded-full text-slate-800 font-medium hover:bg-slate-100 hover:border-blue-400"
-            >
-              Ministries
-            </Link>
-            <Link
-              href="/division/pastoral-areas"
-              className="px-5 py-2 bg-white border-2 border-slate-300 rounded-full text-slate-800 font-medium hover:bg-slate-100 hover:border-blue-400"
-            >
-              Pastoral Areas
-            </Link>
+      <section style={styles.tiles}>
+        {/* Tile 1 — Discipleship Journey */}
+        <Link href="/journey/" style={styles.tileLink}>
+          <div style={styles.tile}>
+            <div style={styles.icon}>🧭</div>
+            <h2 style={styles.tileTitle}>
+              Discipleship<br />Journey<br />Calendar
+            </h2>
+            <ul style={styles.stageList}>
+              <li><span style={{ ...styles.dot, background: '#F5C518' }} /> Engage</li>
+              <li><span style={{ ...styles.dot, background: '#8BC34A' }} /> Edify</li>
+              <li><span style={{ ...styles.dot, background: '#2E9DF7' }} /> Equip</li>
+              <li><span style={{ ...styles.dot, background: '#8B1A1A' }} /> Empower</li>
+            </ul>
+            <p style={styles.quote}>&quot;Check activities in the Discipleship Journey&quot;</p>
+            <span style={styles.exploreLink}>Explore →</span>
           </div>
-        </div>
+        </Link>
 
-        <p className="text-center text-slate-600 mt-10">
-          💡 Not sure where to look? Ask the Welcome Center Assistant 💬
-        </p>
+        {/* Tile 2 — Organizers' Calendar */}
+        <Link href="/division/" style={styles.tileLink}>
+          <div style={styles.tile}>
+            <div style={styles.icon}>🏛️</div>
+            <h2 style={styles.tileTitle}>
+              Organizers&apos;<br />Calendar
+            </h2>
+            <ul style={styles.stageList}>
+              <li><span style={{ ...styles.dot, background: '#1FA3C0' }} /> GLC</li>
+              <li><span style={{ ...styles.dot, background: '#8BC34A' }} /> Ministries</li>
+              <li><span style={{ ...styles.dot, background: '#F5C518' }} /> Pastoral Areas</li>
+            </ul>
+            <p style={styles.quote}>&quot;What is [X] doing next?&quot;</p>
+            <span style={styles.exploreLink}>Explore →</span>
+          </div>
+        </Link>
+
+        {/* Tile 3 — Monthly Calendars */}
+        <Link href="/month/current" style={{ textDecoration: 'none' }}>
+          <div style={styles.tile}>
+            <div style={styles.icon}>📅</div>
+            <h2 style={styles.tileTitle}>
+              Monthly<br />Calendars
+            </h2>
+            <p style={styles.tileBody}>
+              January to December
+            </p>
+            <p style={styles.quote}>&quot;What&apos;s happening this month?&quot;</p>
+            <span style={styles.exploreLink}>Explore →</span>
+          </div>
+        </Link>
       </section>
+
+      <footer style={styles.footer}>
+        💡 Not sure where to start? <strong>Ask the Assistant</strong> 💬
+      </footer>
     </main>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  main: {
+    minHeight: '100vh',
+    background: '#C5E4F0',
+    padding: '4vh 5vw',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: '3vh',
+    maxWidth: '900px',
+  },
+  headline: {
+    fontSize: 'clamp(2rem, 6vh, 4rem)',
+    color: '#1FA3C0',
+    fontWeight: 900,
+    letterSpacing: '-0.02em',
+    lineHeight: 1.05,
+    marginBottom: '0.4em',
+  },
+  subtitle: {
+    fontSize: 'clamp(1rem, 2vh, 1.3rem)',
+    color: '#2D3748',
+    marginBottom: '0.5em',
+  },
+  tiles: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    gap: '1.5rem',
+    width: '100%',
+    maxWidth: '1200px',
+    marginTop: '1rem',
+  },
+  tileLink: {
+    textDecoration: 'none',
+    color: 'inherit',
+    display: 'block',
+  },
+  tile: {
+    background: 'white',
+    border: '3px solid #1A202C',
+    borderRadius: '16px',
+    padding: '1.75rem 1.5rem',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+  },
+  icon: {
+    fontSize: '2.5rem',
+    marginBottom: '0.6rem',
+  },
+  tileTitle: {
+    fontSize: 'clamp(1.2rem, 2.4vh, 1.6rem)',
+    fontWeight: 800,
+    color: '#1FA3C0',
+    lineHeight: 1.15,
+    marginBottom: '1rem',
+  },
+  stageList: {
+    listStyle: 'none',
+    padding: 0,
+    margin: '0 0 1rem 0',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.4rem',
+  },
+  dot: {
+    display: 'inline-block',
+    width: '14px',
+    height: '14px',
+    borderRadius: '50%',
+    marginRight: '0.6rem',
+    verticalAlign: 'middle',
+    border: '1px solid rgba(0,0,0,0.15)',
+  },
+  tileBody: {
+    fontSize: '1rem',
+    color: '#2D3748',
+    marginBottom: '1rem',
+    fontWeight: 500,
+  },
+  quote: {
+    fontSize: '0.95rem',
+    color: '#4A5568',
+    fontStyle: 'italic',
+    marginBottom: '1.2rem',
+    marginTop: 'auto',
+  },
+  footer: {
+    marginTop: '3vh',
+    fontSize: 'clamp(0.95rem, 1.8vh, 1.15rem)',
+    color: '#2D3748',
+    textAlign: 'center',
+  },
+};
