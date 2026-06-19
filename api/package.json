@@ -1,0 +1,7 @@
+{
+  "name": "icorner-api",
+  "version": "1.0.0",
+  "description": "Azure Functions for iCorner admin operations",
+  "main": "index.js",
+  "dependencies": {}
+}
