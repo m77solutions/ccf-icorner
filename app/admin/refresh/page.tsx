@@ -15,7 +15,8 @@ export default function AdminRefreshPage() {
     setMessage('Triggering refresh...');
 
     try {
-      const res = await fetch('/api/admin-refresh', {
+      const res = await fetch('https://icorner-admin-refresh.carlo-8b9.workers.dev', {
+
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })
