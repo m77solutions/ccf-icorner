@@ -1,0 +1,19 @@
+// scripts/generate-ics-files.ts
+// Run before `next build` to write static .ics files into public/events/
+
+import { writeFileSync, mkdirSync, rmSync } from 'fs';
+import { join } from 'path';
+import { EVENTS } from '../lib/events-data';
+import { generateICS, icsSlug } from '../lib/ics-generator';
+
+const outDir = join(process.cwd(), 'public', 'events');
+rmSync(outDir, { recursive: true, force: true });
+mkdirSync(outDir, { recursive: true });
+
+let count = 0;
+for (const event of EVENTS) {
+  const ics = generateICS(event);
+  writeFileSync(join(outDir, `${icsSlug(event)}.ics`), ics, 'utf8');
+  count++;
+}
+console.log(`✅ Generated ${count} .ics files in public/events/`);

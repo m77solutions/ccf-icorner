@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import type { CCFEvent, JourneyStage } from '@/lib/events';
+ import EventQRCode from './EventQRCode';
 
 type StageColorMap = Record<JourneyStage, { bg: string; text: string; border: string }>;
 
@@ -224,6 +225,11 @@ export default function EventDetailModal({
             >
               📥 Add to Calendar
             </button> */}
+          </div>
+
+          {/* QR Code for Add to Calendar */}
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px dashed #E2E8F0', display: 'flex', justifyContent: 'center' }}>
+            <EventQRCode event={event} size={140} />
           </div>
         </div>
       </div>
