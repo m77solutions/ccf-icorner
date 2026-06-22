@@ -1,6 +1,6 @@
-// app/events/[id]/route.ts
-// Static .ics generation at build time. URL pattern: /events/<id>
-// Phones recognize the Content-Type: text/calendar and offer "Add to Calendar".
+// app/events/[id]/calendar.ics/route.ts
+// Static .ics generation. URL: /events/<id>/calendar.ics
+// The .ics extension in the URL ensures phones recognize it as a calendar file.
 import { EVENTS } from '@/lib/events-data';
 import { generateICS } from '@/lib/ics-generator';
 
