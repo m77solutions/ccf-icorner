@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run generate-ics && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "generate-ics": "tsx scripts/generate-ics-files.mts"
+    "lint": "next lint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",

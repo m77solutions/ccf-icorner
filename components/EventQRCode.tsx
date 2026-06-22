@@ -14,7 +14,7 @@ type Props = {
 
 export default function EventQRCode({ event, size = 140 }: Props) {
   const [dataUrl, setDataUrl] = useState<string>('');
-  const icsUrl = `${SITE_URL}/events/${event.id}.ics`;
+  const icsUrl = `${SITE_URL}/events/${event.id}/`;
 
   useEffect(() => {
     QRCode.toDataURL(icsUrl, {

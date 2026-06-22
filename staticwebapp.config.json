@@ -2,7 +2,7 @@
   "trailingSlash": "always",
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/_next/*", "/images/*", "*.css", "*.js", "*.ico", "*.png", "*.jpg", "*.svg"]
+    "exclude": ["/_next/*", "/images/*", "/events/*", "*.css", "*.js", "*.ico", "*.png", "*.jpg", "*.svg"]
   },
   "mimeTypes": {
     ".json": "application/json"
@@ -12,6 +12,14 @@
       "route": "/_next/*",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/events/*",
+      "headers": {
+        "content-type": "text/calendar; charset=utf-8",
+        "content-disposition": "inline",
+        "cache-control": "public, max-age=3600"
       }
     }
   ]
