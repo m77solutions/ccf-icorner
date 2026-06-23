@@ -207,9 +207,94 @@ export default function AdminEventsClient({ events, divisions, stages }: Props) 
           </div>
         </div>
 
-        <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 12, marginTop: 16 }}>
+        <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 12, marginTop: 16, marginBottom: 24 }}>
           Data source: Google Sheet (CSV). To make changes, click "Edit in Google Sheet" above, then "Refresh Kiosk".
         </p>
+
+        {/* ============== AWESOME FOOTER ============== */}
+        <footer style={{
+          marginTop: 40,
+          padding: '32px 24px',
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #312E81 100%)',
+          borderRadius: 16,
+          color: 'white',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Decorative gradient blobs */}
+          <div style={{
+            position: 'absolute', top: -50, right: -50, width: 200, height: 200,
+            background: 'radial-gradient(circle, rgba(31,163,192,0.3) 0%, transparent 70%)',
+            borderRadius: '50%', pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', bottom: -50, left: -50, width: 200, height: 200,
+            background: 'radial-gradient(circle, rgba(147,51,234,0.25) 0%, transparent 70%)',
+            borderRadius: '50%', pointerEvents: 'none',
+          }} />
+
+          <div style={{ position: 'relative', textAlign: 'center', maxWidth: 720, margin: '0 auto' }}>
+            {/* Built with love */}
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>
+              Crafted with 💙 by
+            </div>
+
+            {/* M77 Solutions branding */}
+            <a
+              href="https://www.m77solutions.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                fontSize: 32,
+                fontWeight: 900,
+                background: 'linear-gradient(135deg, #1FA3C0 0%, #9333EA 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                textDecoration: 'none',
+                letterSpacing: 1,
+                marginBottom: 4,
+              }}
+            >
+              M77 Solutions
+            </a>
+            <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 24 }}>
+              <a href="https://www.m77solutions.com" target="_blank" rel="noopener noreferrer" style={{ color: '#7DD3FC', textDecoration: 'none' }}>
+                www.m77solutions.com →
+              </a>
+            </div>
+
+            {/* Pamilya Z */}
+            <div style={{
+              padding: '20px 16px',
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(10px)',
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#A78BFA', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>
+                ✨ Pamilya Z ✨
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 8, fontSize: 14, color: 'white', fontWeight: 600 }}>
+                <span>Francis Carlo Zandueta</span>
+                <span style={{ color: '#64748B' }}>·</span>
+                <span>Valerie Rochelle Zandueta</span>
+                <span style={{ color: '#64748B' }}>·</span>
+                <span>Hiraya Zandueta</span>
+              </div>
+              <div style={{ marginTop: 12, fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>
+                Engineer · Solutions Architect · Dad · Husband
+              </div>
+            </div>
+
+            {/* Bottom line */}
+            <div style={{ marginTop: 24, fontSize: 11, color: '#64748B', letterSpacing: 0.5 }}>
+              © {new Date().getFullYear()} M77 Solutions · Built for CCF iCorner with God's grace 🙏
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );
