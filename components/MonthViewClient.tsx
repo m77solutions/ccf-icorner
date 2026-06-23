@@ -203,7 +203,7 @@ function CalendarView({
               </div>
               {dayEvents.slice(0, 3).map((e) => {
                 const c = e.isConference
-                  ? { bg: '#F3E8FF', fg: '#9333EA', border: '#9333EA' }
+                  ? { bg: '#F3E8FF', text: '#9333EA', border: '#9333EA' }
                   : stageColors[e.journeyStage];
                 return (
                   <div
@@ -258,7 +258,7 @@ function ListView({
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
       {events.map((e) => {
         const c = e.isConference
-                  ? { bg: '#F3E8FF', fg: '#9333EA', border: '#9333EA' }
+                  ? { bg: '#F3E8FF', text: '#9333EA', border: '#9333EA' }
                   : stageColors[e.journeyStage];
         const timeBit = e.timeLabel ? ` · ${e.timeLabel}` : '';
         return (
@@ -335,7 +335,7 @@ function TimelineView({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 16, borderLeft: '3px dashed #1FA3C0' }}>
             {weekEvents.map((e) => {
               const c = e.isConference
-                  ? { bg: '#F3E8FF', fg: '#9333EA', border: '#9333EA' }
+                  ? { bg: '#F3E8FF', text: '#9333EA', border: '#9333EA' }
                   : stageColors[e.journeyStage];
               return (
                 <div

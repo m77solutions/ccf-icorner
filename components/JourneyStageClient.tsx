@@ -162,7 +162,7 @@ export default function JourneyStageClient({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 16, borderLeft: `3px dashed ${c.border}` }}>
                   {monthEvents.map((e) => {
                     const ec = e.isConference
-                    ? { bg: '#F3E8FF', fg: '#9333EA', border: '#9333EA' }
+                    ? { bg: '#F3E8FF', text: '#9333EA', border: '#9333EA' }
                     : stageColors[e.journeyStage];
                     return (
                       <div
