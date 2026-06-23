@@ -151,7 +151,7 @@ export default function EventDetailModal({
           </button>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
             <span style={{ background: '#FFF', color: c.text, padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 800, textTransform: 'uppercase', border: `1px solid ${c.border}` }}>
-              {event.journeyStage}
+              {event.isConference ? 'CONFERENCE' : event.journeyStage}
             </span>
             {event.regStatus !== 'N/A' && (
               <span style={{ background: event.regStatus === 'OPEN' ? '#16A34A' : '#9CA3AF', color: '#FFF', padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800 }}>

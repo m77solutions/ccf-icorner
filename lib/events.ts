@@ -22,6 +22,7 @@ export type CCFEvent = {
   platform: string;
   cost: number | null;
   regStatus: RegStatus;
+  isConference?: boolean;
 };
 
 function normalizeStage(s: string): JourneyStage {
@@ -260,7 +261,7 @@ export const STAGE_COLORS: Record<JourneyStage, { bg: string; text: string; bord
 
 // ---------- DIVISION SUPPORT ----------
 
-export type DivisionId = 'glc' | 'ministries' | 'pastoral-areas';
+export type DivisionId = 'glc' | 'ministries' | 'pastoral-areas' | 'conference';
 
 export type Division = {
   id: DivisionId;
@@ -292,6 +293,15 @@ export const DIVISIONS: Division[] = [
     icon: '👥',
     color: '#F5C518',
   },
+
+  {
+  id: 'conference',
+  label: 'Conference',
+  description: 'Conferences, summits, and special gatherings',
+  icon: '🎤',
+  color: '#9333EA',   // purple — distinct from existing 4 colors
+}
+
 ];
 
 export function getDivisionById(id: string): Division | undefined {

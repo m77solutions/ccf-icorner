@@ -24,6 +24,10 @@ function mdyToISO(s: string): string {
   return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
 }
 
+function isConferenceStage(s: string): boolean {
+  return s.trim().toUpperCase() === 'CONFERENCE';
+}
+
 function normalizeStage(s: string): JourneyStage {
   const t = s.trim().toUpperCase();
   if (t === 'EDIFY') return 'Edify';
@@ -188,6 +192,7 @@ function parseRow(row: CSVRow, idx: number): CCFEvent[] {
       platform,
       cost,
       regStatus: 'N/A',
+      isConference: stages.some(isConferenceStage),
     };
   });
 }
@@ -270,6 +275,7 @@ export function getCurrentMonthSlug(): string {
 }
 
 export function getEventDivision(event: CCFEvent): DivisionId {
+  if (event.isConference) return 'conference';
   const prefix = event.originator.trim().split(/[\s-]/)[0].toUpperCase();
   if (prefix === 'D' || prefix === 'GLC') return 'glc';
   if (prefix === 'M' || prefix === 'WOW' || prefix === 'INTERCEDE') return 'ministries';
