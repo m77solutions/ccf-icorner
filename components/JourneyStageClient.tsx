@@ -161,7 +161,9 @@ export default function JourneyStageClient({
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 16, borderLeft: `3px dashed ${c.border}` }}>
                   {monthEvents.map((e) => {
-                    const ec = stageColors[e.journeyStage];
+                    const ec = e.isConference
+                    ? { bg: '#F3E8FF', fg: '#9333EA', border: '#9333EA' }
+                    : stageColors[e.journeyStage];
                     return (
                       <div
                         key={e.id}
@@ -266,7 +268,7 @@ function EventCard({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
         <span style={{ background: c.bg, color: c.text, padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 800, textTransform: 'uppercase' }}>
-          {e.journeyStage}
+          {e.isConference ? 'CONFERENCE' : e.journeyStage}
         </span>
         {e.regStatus !== 'N/A' && (
           <span style={{ background: e.regStatus === 'OPEN' ? '#16A34A' : '#9CA3AF', color: '#FFF', padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 800 }}>

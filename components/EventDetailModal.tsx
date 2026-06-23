@@ -79,7 +79,9 @@ export default function EventDetailModal({
 
   if (!event) return null;
 
-  const c = stageColors[event.journeyStage];
+  const c = event.isConference
+    ? { bg: '#F3E8FF', fg: '#9333EA', border: '#9333EA' }
+    : stageColors[event.journeyStage];
   const hasRegLink = event.platform && isExternalUrl(event.platform);
 
   return (

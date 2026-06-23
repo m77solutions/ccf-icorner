@@ -202,7 +202,9 @@ function CalendarView({
                 {day.getDate()}
               </div>
               {dayEvents.slice(0, 3).map((e) => {
-                const c = stageColors[e.journeyStage];
+                const c = e.isConference
+                  ? { bg: '#F3E8FF', fg: '#9333EA', border: '#9333EA' }
+                  : stageColors[e.journeyStage];
                 return (
                   <div
                     key={e.id}
@@ -255,7 +257,9 @@ function ListView({
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
       {events.map((e) => {
-        const c = stageColors[e.journeyStage];
+        const c = e.isConference
+                  ? { bg: '#F3E8FF', fg: '#9333EA', border: '#9333EA' }
+                  : stageColors[e.journeyStage];
         const timeBit = e.timeLabel ? ` · ${e.timeLabel}` : '';
         return (
           <div
@@ -272,7 +276,7 @@ function ListView({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
               <span style={{ background: c.bg, color: c.text, padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 800, textTransform: 'uppercase' }}>
-                {e.journeyStage}
+                {e.isConference ? 'CONFERENCE' : e.journeyStage}
               </span>
               {e.regStatus !== 'N/A' && (
                 <span style={{ background: e.regStatus === 'OPEN' ? '#16A34A' : '#9CA3AF', color: '#FFF', padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 800 }}>
@@ -330,7 +334,9 @@ function TimelineView({
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 16, borderLeft: '3px dashed #1FA3C0' }}>
             {weekEvents.map((e) => {
-              const c = stageColors[e.journeyStage];
+              const c = e.isConference
+                  ? { bg: '#F3E8FF', fg: '#9333EA', border: '#9333EA' }
+                  : stageColors[e.journeyStage];
               return (
                 <div
                   key={e.id}
@@ -351,7 +357,7 @@ function TimelineView({
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <strong style={{ color: '#0F172A', fontSize: 16 }}>{e.activity}</strong>
                       <span style={{ background: '#FFF', color: c.text, padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 800 }}>
-                        {e.journeyStage.toUpperCase()}
+                        {e.isConference ? 'CONFERENCE' : e.journeyStage.toUpperCase()}
                       </span>
                       {e.regStatus !== 'N/A' && (
                         <span style={{ background: e.regStatus === 'OPEN' ? '#16A34A' : '#9CA3AF', color: '#FFF', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 800 }}>
