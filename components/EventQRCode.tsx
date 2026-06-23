@@ -47,7 +47,7 @@ export default function EventQRCode({ event, size = 140 }: Props) {
         className="rounded border border-gray-200"
       />
       <p className="text-xs text-gray-600 text-center max-w-[160px]">
-        📱 Scan to add to your calendar
+        📱 Scan with phone camera to save event
       </p>
     </div>
   );

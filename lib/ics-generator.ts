@@ -94,7 +94,7 @@ function buildVEvent(
     event.contactPerson ? `Contact: ${event.contactPerson}` : '',
     event.contactNumber ? `Phone: ${event.contactNumber}` : '',
     event.cost !== null ? `Cost: ${event.cost === 0 ? 'FREE' : `PHP ${event.cost}`}` : '',
-  ].filter(Boolean).join('\\n');
+  ].filter(Boolean).join('\n');
 
   return [
     'BEGIN:VEVENT',

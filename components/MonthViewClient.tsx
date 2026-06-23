@@ -207,7 +207,7 @@ function CalendarView({
                   : stageColors[e.journeyStage];
                 return (
                   <div
-                    key={e.id}
+                    key={`${e.id}-${e.startDate}`}
                     title={`${e.activity} — ${e.activityDetail}`}
                     onClick={() => onEventClick(e)}
                     style={{
@@ -263,7 +263,7 @@ function ListView({
         const timeBit = e.timeLabel ? ` · ${e.timeLabel}` : '';
         return (
           <div
-            key={e.id}
+            key={`${e.id}-${e.startDate}`}
             onClick={() => onEventClick(e)}
             style={{
               background: '#FFF',
@@ -339,7 +339,7 @@ function TimelineView({
                   : stageColors[e.journeyStage];
               return (
                 <div
-                  key={e.id}
+                  key={`${e.id}-${e.startDate}`}
                   onClick={() => onEventClick(e)}
                   style={{
                     display: 'flex',

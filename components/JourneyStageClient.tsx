@@ -136,7 +136,7 @@ export default function JourneyStageClient({
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
                   {monthEvents.map((e) => (
                     <EventCard
-                      key={e.id}
+                      key={`${e.id}-${e.startDate}`}
                       event={e}
                       stageColors={stageColors}
                       onClick={() => setSelectedEvent(e)}
@@ -166,7 +166,7 @@ export default function JourneyStageClient({
                     : stageColors[e.journeyStage];
                     return (
                       <div
-                        key={e.id}
+                        key={`${e.id}-${e.startDate}`}
                         onClick={() => setSelectedEvent(e)}
                         style={{
                           display: 'flex',
