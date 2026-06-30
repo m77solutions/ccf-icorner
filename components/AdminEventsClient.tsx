@@ -27,10 +27,9 @@ export default function AdminEventsClient({ events, divisions, stages }: Props) 
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    // Compute current month in Asia/Manila
-    const now = new Date();
-    const local = new Date(now.getTime() + (8 * 60 - now.getTimezoneOffset()) * 60000);
-    const currentYM = `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}`;
+    // Compute current month in Asia/Manila (bulletproof via Intl)
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit' }).formatToParts(new Date());
+    const currentYM = `${parts.find(p => p.type === 'year')!.value}-${parts.find(p => p.type === 'month')!.value}`;
     let list = events.filter(e => {
       // Past-event filter
       const endYM = (e.endDate || e.startDate).slice(0, 7);

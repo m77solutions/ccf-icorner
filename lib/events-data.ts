@@ -318,13 +318,20 @@ export function getEventsByJourneyStage(stageId: string): CCFEvent[] {
 // Multi-day events spanning months stay visible through their end month.
 // ============================================
 export function getActiveEvents(allEvents: CCFEvent[] = EVENTS): CCFEvent[] {
-  const now = new Date();
-  // Asia/Manila is UTC+8 — compute current YYYY-MM in Manila timezone
-  const manilaOffset = 8 * 60; // minutes
-  const local = new Date(now.getTime() + (manilaOffset - now.getTimezoneOffset()) * 60000);
-  const currentYM = `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}`;
   return allEvents.filter(e => {
     const endYM = (e.endDate || e.startDate).slice(0, 7); // 'YYYY-MM'
-    return endYM >= currentYM;
+    return endYM >= getCurrentManilaYM();
   });
+}
+
+// Bulletproof: get current YYYY-MM in Asia/Manila regardless of build env timezone
+export function getCurrentManilaYM(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(new Date());
+  const y = parts.find(p => p.type === 'year')!.value;
+  const m = parts.find(p => p.type === 'month')!.value;
+  return `${y}-${m}`;
 }
