@@ -14,6 +14,7 @@ type SortKey = 'startDate' | 'activity' | 'originator' | 'journeyStage' | 'locat
 
 export default function AdminEventsClient({ events, divisions, stages }: Props) {
   const [authed, setAuthed] = useState(false);
+  const [showPast, setShowPast] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -26,7 +27,14 @@ export default function AdminEventsClient({ events, divisions, stages }: Props) 
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    // Compute current month in Asia/Manila
+    const now = new Date();
+    const local = new Date(now.getTime() + (8 * 60 - now.getTimezoneOffset()) * 60000);
+    const currentYM = `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}`;
     let list = events.filter(e => {
+      // Past-event filter
+      const endYM = (e.endDate || e.startDate).slice(0, 7);
+      if (!showPast && endYM < currentYM) return false;
       if (stageFilter && !e.isConference && e.journeyStage !== stageFilter) return false;
       if (stageFilter === 'Conference' && !e.isConference) return false;
       if (divisionFilter && e.divisionId !== divisionFilter) return false;
@@ -43,7 +51,7 @@ export default function AdminEventsClient({ events, divisions, stages }: Props) 
       return sortAsc ? cmp : -cmp;
     });
     return list;
-  }, [events, search, stageFilter, divisionFilter, sortKey, sortAsc]);
+  }, [events, search, stageFilter, divisionFilter, sortKey, sortAsc, showPast]);
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -133,8 +141,12 @@ export default function AdminEventsClient({ events, divisions, stages }: Props) 
               <option value="">All divisions</option>
               {divisions.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
             </select>
-            {(search || stageFilter || divisionFilter) && (
-              <button onClick={() => { setSearch(''); setStageFilter(''); setDivisionFilter(''); }} style={{ padding: '10px 14px', fontSize: 14, background: '#F1F5F9', border: '2px solid #E2E8F0', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: showPast ? '#FEF3C7' : '#F1F5F9', border: '2px solid ' + (showPast ? '#F59E0B' : '#E2E8F0'), borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: showPast ? '#92400E' : '#475569' }}>
+              <input type="checkbox" checked={showPast} onChange={e => setShowPast(e.target.checked)} style={{ cursor: 'pointer' }} />
+              {showPast ? '📅 Showing past events' : '🕐 Show past events'}
+            </label>
+            {(search || stageFilter || divisionFilter || showPast) && (
+              <button onClick={() => { setSearch(''); setStageFilter(''); setDivisionFilter(''); setShowPast(false); }} style={{ padding: '10px 14px', fontSize: 14, background: '#F1F5F9', border: '2px solid #E2E8F0', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
                 Clear
               </button>
             )}

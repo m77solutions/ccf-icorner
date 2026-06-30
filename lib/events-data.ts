@@ -236,22 +236,23 @@ export const EVENTS: CCFEvent[] = await loadEventsFromCSV();
 
 // ───── query functions (mirror old lib/events.ts API) ─────
 
-export function getAllMonths(): { month: string; slug: string; count: number }[] {
+export function getAllMonths(includePast: boolean = false): { month: string; slug: string; count: number }[] {
+  const events = includePast ? EVENTS : getActiveEvents(EVENTS);
   const map = new Map<string, { month: string; slug: string; count: number }>();
-  for (const e of EVENTS) {
+  for (const e of events) {
     const existing = map.get(e.monthSlug);
     if (existing) existing.count++;
     else map.set(e.monthSlug, { month: e.month, slug: e.monthSlug, count: 1 });
   }
   return Array.from(map.values()).sort((a, b) => {
-    const aDate = EVENTS.find((e) => e.monthSlug === a.slug)!.startDate;
-    const bDate = EVENTS.find((e) => e.monthSlug === b.slug)!.startDate;
+    const aDate = events.find((e) => e.monthSlug === a.slug)!.startDate;
+    const bDate = events.find((e) => e.monthSlug === b.slug)!.startDate;
     return aDate.localeCompare(bDate);
   });
 }
 
 export function getEventsByMonth(slug: string): CCFEvent[] {
-  return EVENTS.filter((e) => {
+  return getActiveEvents(EVENTS).filter((e) => {
     if (e.monthSlug === slug) return true;
     if (e.occurrences) {
       return e.occurrences.some((d) => monthSlugFromLabel(monthLabelFromISO(d)) === slug);
@@ -261,7 +262,7 @@ export function getEventsByMonth(slug: string): CCFEvent[] {
 }
 
 export function getEventsByStage(stage: JourneyStage): CCFEvent[] {
-  return EVENTS.filter((e) => e.journeyStage === stage);
+  return getActiveEvents(EVENTS).filter((e) => e.journeyStage === stage);
 }
 
 export function getCurrentMonthSlug(): string {
@@ -284,7 +285,7 @@ export function getEventDivision(event: CCFEvent): DivisionId {
 }
 
 export function getEventsByDivision(divisionId: DivisionId): CCFEvent[] {
-  return EVENTS.filter((e) => getEventDivision(e) === divisionId).sort((a, b) =>
+  return getActiveEvents(EVENTS).filter((e) => getEventDivision(e) === divisionId).sort((a, b) =>
     a.startDate.localeCompare(b.startDate),
   );
 }
@@ -308,4 +309,22 @@ export function getEventsByJourneyStage(stageId: string): CCFEvent[] {
   return EVENTS.filter((e) => e.journeyStage.toLowerCase() === target).sort((a, b) =>
     a.startDate.localeCompare(b.startDate),
   );
+}
+
+
+// ============================================
+// Month-to-month filter (Pastor Ricky's request)
+// Returns events whose END month is >= current month.
+// Multi-day events spanning months stay visible through their end month.
+// ============================================
+export function getActiveEvents(allEvents: CCFEvent[] = EVENTS): CCFEvent[] {
+  const now = new Date();
+  // Asia/Manila is UTC+8 — compute current YYYY-MM in Manila timezone
+  const manilaOffset = 8 * 60; // minutes
+  const local = new Date(now.getTime() + (manilaOffset - now.getTimezoneOffset()) * 60000);
+  const currentYM = `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}`;
+  return allEvents.filter(e => {
+    const endYM = (e.endDate || e.startDate).slice(0, 7); // 'YYYY-MM'
+    return endYM >= currentYM;
+  });
 }
