@@ -2,13 +2,84 @@
   "trailingSlash": "always",
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/_next/*", "/images/*", "/events/*", "*.css", "*.js", "*.ico", "*.png", "*.jpg", "*.svg", "*.ics"]
+    "exclude": [
+      "/_next/*",
+      "/images/*",
+      "/events/*",
+      "*.css",
+      "*.js",
+      "*.ico",
+      "*.png",
+      "*.jpg",
+      "*.svg",
+      "*.ics"
+    ]
   },
   "mimeTypes": {
     ".json": "application/json",
     ".ics": "text/calendar"
   },
   "routes": [
+    {
+      "route": "/month/june-2026",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/june-2026/*",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/may-2026",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/may-2026/*",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/april-2026",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/april-2026/*",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/march-2026",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/march-2026/*",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/february-2026",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/february-2026/*",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/january-2026",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/january-2026/*",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
     {
       "route": "/_next/*",
       "headers": {
