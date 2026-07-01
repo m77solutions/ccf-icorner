@@ -277,10 +277,39 @@ export function getCurrentMonthSlug(): string {
 
 export function getEventDivision(event: CCFEvent): DivisionId {
   if (event.isConference) return 'conference';
-  const prefix = event.originator.trim().split(/[\s-]/)[0].toUpperCase();
-  if (prefix === 'D' || prefix === 'GLC') return 'glc';
-  if (prefix === 'M' || prefix === 'WOW' || prefix === 'INTERCEDE') return 'ministries';
-  if (prefix === 'P' || prefix === 'PA' || prefix === 'S' || prefix === 'LUZON') return 'pastoral-areas';
+
+  const originator = event.originator.trim().toUpperCase();
+  const firstToken = originator.split(/[\s-]/)[0];
+
+  // GLC (Global Leadership Center)
+  if (firstToken === 'D' || firstToken === 'GLC') return 'glc';
+
+  // Pastoral Areas — includes:
+  //   • PA - <name> (e.g., "PA - RICKY SARTHOU")
+  //   • S / satellites
+  //   • LUZON (any LUZON-prefixed entity)
+  //   • CCF <region> (e.g., "CCF LUZON SOUTH", "CCF LUZON CENTRAL", "CCF NORTH EDSA")
+  //   • Any originator containing "LUZON", "SATELLITE", or the region tags
+  if (
+    firstToken === 'P' ||
+    firstToken === 'PA' ||
+    firstToken === 'S' ||
+    firstToken === 'LUZON' ||
+    firstToken === 'CCF' ||
+    originator.includes('LUZON') ||
+    originator.includes('SATELLITE') ||
+    originator.includes('NORTH EDSA') ||
+    originator.includes('PASTORAL')
+  ) {
+    return 'pastoral-areas';
+  }
+
+  // Ministries (WOW, Intercede, M-prefix, etc.)
+  if (firstToken === 'M' || firstToken === 'WOW' || firstToken === 'INTERCEDE') {
+    return 'ministries';
+  }
+
+  // Default: ministries (safe fallback)
   return 'ministries';
 }
 
