@@ -347,10 +347,55 @@ export function getEventsByJourneyStage(stageId: string): CCFEvent[] {
 // Multi-day events spanning months stay visible through their end month.
 // ============================================
 export function getActiveEvents(allEvents: CCFEvent[] = EVENTS): CCFEvent[] {
-  return allEvents.filter(e => {
-    const endYM = (e.endDate || e.startDate).slice(0, 7); // 'YYYY-MM'
-    return endYM >= getCurrentManilaYM();
-  });
+  const currentYM = getCurrentManilaYM();
+  const todayISO = getTodayManilaISO();
+
+  return allEvents
+    .filter(e => {
+      // Drop event entirely if its END is before current month
+      const endYM = (e.endDate || e.startDate).slice(0, 7);
+      return endYM >= currentYM;
+    })
+    .map(e => {
+      // For recurring events, filter out past occurrences
+      if (e.occurrences && e.occurrences.length > 0) {
+        const futureOccurrences = e.occurrences.filter(d => d >= todayISO);
+        if (futureOccurrences.length === 0) return null;
+        // Recompute derived fields from the remaining occurrences
+        const newStartDate = futureOccurrences[0];
+        const newEndDate = futureOccurrences[futureOccurrences.length - 1];
+        const newMonth = monthLabelFromISO(newStartDate);
+        const newMonthSlug = monthSlugFromLabel(newMonth);
+        // Rebuild dateLabel: "Jul 11" or "Jul 11, Jul 25, Aug 1"
+        const newDateLabel = futureOccurrences.map(d => formatMonthDay(d)).join(', ');
+        return {
+          ...e,
+          startDate: newStartDate,
+          endDate: newEndDate,
+          occurrences: futureOccurrences,
+          month: newMonth,
+          monthSlug: newMonthSlug,
+          dateLabel: newDateLabel,
+        };
+      }
+      // For non-recurring events, keep as-is (they already passed the endYM check)
+      return e;
+    })
+    .filter((e): e is CCFEvent => e !== null);
+}
+
+// Helper: today in Asia/Manila as YYYY-MM-DD
+export function getTodayManilaISO(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const y = parts.find(p => p.type === 'year')!.value;
+  const m = parts.find(p => p.type === 'month')!.value;
+  const d = parts.find(p => p.type === 'day')!.value;
+  return `${y}-${m}-${d}`;
 }
 
 // Bulletproof: get current YYYY-MM in Asia/Manila regardless of build env timezone
