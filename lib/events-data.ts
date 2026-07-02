@@ -284,6 +284,16 @@ export function getEventDivision(event: CCFEvent): DivisionId {
   // GLC (Global Leadership Center)
   if (firstToken === 'D' || firstToken === 'GLC') return 'glc';
 
+  // EXCEPTION: Pastoral Care Department (PCD) is a MINISTRY, not a Pastoral Area.
+  // Must be checked BEFORE the generic "PASTORAL" match below.
+  if (
+    firstToken === 'PCD' ||
+    originator.includes('PCD') ||
+    originator.includes('PASTORAL CARE')
+  ) {
+    return 'ministries';
+  }
+
   // Pastoral Areas — includes:
   //   • PA - <name> (e.g., "PA - RICKY SARTHOU")
   //   • S / satellites
