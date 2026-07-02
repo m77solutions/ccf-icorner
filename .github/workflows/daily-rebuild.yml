@@ -1,10 +1,8 @@
 name: Daily Rebuild (hide past months)
-
 on:
   schedule:
-    # 00:05 Asia/Manila = 16:05 UTC (previous day)
-    - cron: '5 16 * * *'
-  workflow_dispatch: # allow manual trigger
+    - cron: '5 16 * * *'   # 00:05 Asia/Manila
+  workflow_dispatch:
 
 jobs:
   trigger-rebuild:
@@ -13,6 +11,6 @@ jobs:
       - name: Trigger build_and_deploy_job via repository_dispatch
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.REBUILD_PAT }}
           event-type: refresh-events
           client-payload: '{"reason":"daily-month-rollover"}'
