@@ -345,7 +345,7 @@ export function getEntitiesInDivision(
 
 export function getEventsByJourneyStage(stageId: string): CCFEvent[] {
   const target = stageId.toLowerCase();
-  return EVENTS.filter((e) => e.journeyStage.toLowerCase() === target).sort((a, b) =>
+  return getActiveEvents(EVENTS).filter((e) => e.journeyStage.toLowerCase() === target).sort((a, b) =>
     a.startDate.localeCompare(b.startDate),
   );
 }
