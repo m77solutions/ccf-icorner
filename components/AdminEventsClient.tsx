@@ -6,7 +6,7 @@ import Link from 'next/link';
 import type { CCFEvent, Division, StageInfo, DivisionId } from '@/lib/events';
 
 type EnrichedEvent = CCFEvent & { divisionId: DivisionId };
-type Props = { events: EnrichedEvent[]; divisions: Division[]; stages: StageInfo[] };
+type Props = { events: EnrichedEvent[]; divisions: Division[]; stages: StageInfo[]; issues: DataQualityIssue[] };
 
 const ADMIN_PASSWORD = 'CCFRefresh2026';
 const SHEET_EDIT_URL = 'https://docs.google.com/spreadsheets/d/1KahZ8fDuOj6nxTMw1FgDnx5suo2pSNSy7L4tz-eyPF4/edit?gid=1592089368';

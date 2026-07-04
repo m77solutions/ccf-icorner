@@ -12,5 +12,6 @@ export default function AdminEventsPage() {
     ...e,
     divisionId: getEventDivision(e),
   }));
+  const issues = getDataQualityIssues(EVENTS);
   return <AdminEventsClient events={events} divisions={DIVISIONS} stages={STAGES} issues={issues} />;
 }
