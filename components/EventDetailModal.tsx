@@ -229,6 +229,22 @@ export default function EventDetailModal({
             </button> */}
           </div>
 
+          {event.otherInfo && (
+            <div style={{
+              marginTop: 16,
+              padding: '12px 14px',
+              background: '#FEF9E7',
+              border: '1px solid #F5C518',
+              borderRadius: 10,
+              fontSize: 14,
+              color: '#5C4A00',
+              lineHeight: 1.5,
+            }}>
+              <div style={{ fontWeight: 700, marginBottom: 4, color: '#8B6914' }}>📝 Other Info</div>
+              <div style={{ whiteSpace: 'pre-wrap' }}>{event.otherInfo}</div>
+            </div>
+          )}
+
           {/* QR Code for Add to Calendar */}
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px dashed #E2E8F0', display: 'flex', justifyContent: 'center' }}>
             <EventQRCode event={event} size={140} />
