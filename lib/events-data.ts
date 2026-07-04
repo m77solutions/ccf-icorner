@@ -160,6 +160,7 @@ function parseRow(row: CSVRow, idx: number): CCFEvent[] {
   const timeLabel = formatTimeLabel(row['TIME'] || '');
   const location = (row['LOCATION'] || '').trim();
   const contactPerson = (row['CONTACT PERSON'] || '').trim();
+  const otherInfo = (row['OTHER INFO'] || '').trim();
   const contactNumber = (row['CONTACT NUMBER'] || '').trim();
   const platform = normalizeRegLink(row['REGISTRATION LINK'] || '');
   const cost = parseCost(row['AMOUNT'] || '');
@@ -188,6 +189,7 @@ function parseRow(row: CSVRow, idx: number): CCFEvent[] {
       timeLabel,
       location,
       contactPerson,
+      otherInfo: otherInfo || undefined,
       contactNumber,
       platform,
       cost,

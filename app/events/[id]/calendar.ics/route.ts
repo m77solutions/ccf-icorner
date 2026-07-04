@@ -1,14 +1,14 @@
 // app/events/[id]/calendar.ics/route.ts
 // Static .ics generation. URL: /events/<id>/calendar.ics
 // The .ics extension in the URL ensures phones recognize it as a calendar file.
-import { EVENTS } from '@/lib/events-data';
+import { EVENTS, getActiveEvents } from '@/lib/events-data';
 import { generateICS } from '@/lib/ics-generator';
 
 export const dynamic = 'force-static';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  return EVENTS.map((event) => ({ id: event.id }));
+  return getActiveEvents(EVENTS).map((event) => ({ id: event.id }));
 }
 
 export async function GET(

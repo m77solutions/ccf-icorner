@@ -23,6 +23,7 @@ export type CCFEvent = {
   cost: number | null;
   regStatus: RegStatus;
   isConference?: boolean;
+  otherInfo?: string;
 };
 
 function normalizeStage(s: string): JourneyStage {
