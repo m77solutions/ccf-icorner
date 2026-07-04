@@ -1,4 +1,4 @@
-import { EVENTS, getEventDivision } from '@/lib/events-data';
+import { EVENTS, getEventDivision, getDataQualityIssues } from '@/lib/events-data';
 import { DIVISIONS, STAGES } from '@/lib/events';
 import AdminEventsClient from '@/components/AdminEventsClient';
 
@@ -12,5 +12,5 @@ export default function AdminEventsPage() {
     ...e,
     divisionId: getEventDivision(e),
   }));
-  return <AdminEventsClient events={events} divisions={DIVISIONS} stages={STAGES} />;
+  return <AdminEventsClient events={events} divisions={DIVISIONS} stages={STAGES} issues={issues} />;
 }

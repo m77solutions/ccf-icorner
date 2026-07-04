@@ -424,3 +424,63 @@ export function getCurrentManilaYM(): string {
   const m = parts.find(p => p.type === 'month')!.value;
   return `${y}-${m}`;
 }
+
+// ============================================
+// Data Quality Check (Ate Judy's request)
+// Flags rows with common data-entry problems.
+// ============================================
+export type DataQualityIssue = {
+  eventId: string;
+  eventTitle: string;
+  originator: string;
+  severity: 'error' | 'warning';
+  problem: string;
+};
+
+export function getDataQualityIssues(allEvents: CCFEvent[] = EVENTS): DataQualityIssue[] {
+  const issues: DataQualityIssue[] = [];
+  for (const e of allEvents) {
+    const title = e.activityDetail || e.activity || '(no title)';
+    if (e.endDate && e.startDate && e.endDate < e.startDate) {
+      issues.push({
+        eventId: e.id,
+        eventTitle: title,
+        originator: e.originator || '(empty)',
+        severity: 'error',
+        problem: `End date (${e.endDate}) is BEFORE start date (${e.startDate}). Fix END DATE column.`,
+      });
+    }
+    if (!e.startDate) {
+      issues.push({
+        eventId: e.id,
+        eventTitle: title,
+        originator: e.originator || '(empty)',
+        severity: 'error',
+        problem: 'Missing start date. Fix DATE or START DATE column.',
+      });
+    }
+    if (!e.originator || e.originator.trim() === '') {
+      issues.push({
+        eventId: e.id,
+        eventTitle: title,
+        originator: '(empty)',
+        severity: 'error',
+        problem: 'Missing organizer. Fix ORGANIZER column.',
+      });
+    }
+    if (!e.location || e.location.trim() === '') {
+      issues.push({
+        eventId: e.id,
+        eventTitle: title,
+        originator: e.originator || '(empty)',
+        severity: 'warning',
+        problem: 'Missing location. Use "TBA" if unknown.',
+      });
+    }
+  }
+  return issues.sort((a, b) => {
+    if (a.severity !== b.severity) return a.severity === 'error' ? -1 : 1;
+    return a.originator.localeCompare(b.originator);
+  });
+}
+

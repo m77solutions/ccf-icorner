@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import type { DataQualityIssue } from '@/lib/events-data';
 import Link from 'next/link';
 import type { CCFEvent, Division, StageInfo, DivisionId } from '@/lib/events';
 
@@ -8,11 +9,11 @@ type EnrichedEvent = CCFEvent & { divisionId: DivisionId };
 type Props = { events: EnrichedEvent[]; divisions: Division[]; stages: StageInfo[] };
 
 const ADMIN_PASSWORD = 'CCFRefresh2026';
-const SHEET_EDIT_URL = 'https://docs.google.com/spreadsheets/d/1B4nfajEszuYK0eb7yhqixmM07s0v6gJq_ZRl_p8jL0M/edit';
+const SHEET_EDIT_URL = 'https://docs.google.com/spreadsheets/d/1KahZ8fDuOj6nxTMw1FgDnx5suo2pSNSy7L4tz-eyPF4/edit?gid=1592089368';
 
 type SortKey = 'startDate' | 'activity' | 'originator' | 'journeyStage' | 'location';
 
-export default function AdminEventsClient({ events, divisions, stages }: Props) {
+export default function AdminEventsClient({ events, divisions, stages , issues }: Props) {
   const [authed, setAuthed] = useState(false);
   const [showPast, setShowPast] = useState(false);
   const [password, setPassword] = useState('');
@@ -120,6 +121,64 @@ export default function AdminEventsClient({ events, divisions, stages }: Props) 
         <p style={{ color: '#64748B', margin: '0 0 16px 0', fontSize: 14 }}>
           Read-only view. Para mag-edit/delete, click "Edit in Google Sheet" then "Refresh Kiosk".
         </p>
+
+        {/* Data Quality Check */}
+        {issues && issues.length > 0 && (
+          <div style={{
+            marginBottom: 20,
+            padding: '16px 20px',
+            background: issues.some(i => i.severity === 'error') ? '#FEE2E2' : '#FEF3C7',
+            border: `2px solid ${issues.some(i => i.severity === 'error') ? '#DC2626' : '#F59E0B'}`,
+            borderRadius: 12,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, fontWeight: 800, fontSize: 16, color: issues.some(i => i.severity === 'error') ? '#7F1D1D' : '#78350F' }}>
+              <span style={{ fontSize: 22 }}>{issues.some(i => i.severity === 'error') ? '🚨' : '⚠️'}</span>
+              Data Quality Check — {issues.length} issue{issues.length === 1 ? '' : 's'} found
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+              {issues.slice(0, 10).map((iss, idx) => (
+                <div key={idx} style={{ fontSize: 13, color: '#1F2937', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <span style={{
+                    flexShrink: 0,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                    background: iss.severity === 'error' ? '#DC2626' : '#F59E0B',
+                    color: 'white',
+                    textTransform: 'uppercase',
+                  }}>{iss.severity}</span>
+                  <div>
+                    <strong>{iss.originator}</strong> — {iss.eventTitle}
+                    <div style={{ color: '#4B5563', marginTop: 2 }}>{iss.problem}</div>
+                  </div>
+                </div>
+              ))}
+              {issues.length > 10 && (
+                <div style={{ fontSize: 12, color: '#6B7280', fontStyle: 'italic' }}>
+                  …and {issues.length - 10} more. Fix these in the Sheet and click Refresh Kiosk.
+                </div>
+              )}
+            </div>
+            <a
+              href={SHEET_EDIT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                padding: '8px 16px',
+                background: '#1FA3C0',
+                color: 'white',
+                borderRadius: 8,
+                textDecoration: 'none',
+                fontWeight: 700,
+                fontSize: 14,
+              }}
+            >
+              📝 Open Google Sheet to fix
+            </a>
+          </div>
+        )}
 
         {/* Filters */}
         <div style={{ background: 'white', borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
