@@ -335,7 +335,7 @@ export function getEntitiesInDivision(
   divisionId: DivisionId,
 ): { id: string; label: string; count: number }[] {
   const map = new Map<string, { id: string; label: string; count: number }>();
-  for (const e of EVENTS) {
+  for (const e of getActiveEvents(EVENTS)) {
     if (getEventDivision(e) !== divisionId) continue;
     const key = e.originator;
     const existing = map.get(key);
