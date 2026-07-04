@@ -337,10 +337,13 @@ export function getEntitiesInDivision(
   const map = new Map<string, { id: string; label: string; count: number }>();
   for (const e of getActiveEvents(EVENTS)) {
     if (getEventDivision(e) !== divisionId) continue;
-    const key = e.originator;
-    const existing = map.get(key);
-    if (existing) existing.count++;
-    else map.set(key, { id: slugify(key), label: key, count: 1 });
+    // Split combined originators like "BEYOND, WOW" or "PA - X, PA - Y" into individual entities
+    const parts = e.originator.split(',').map(p => p.trim()).filter(Boolean);
+    for (const key of parts) {
+      const existing = map.get(key);
+      if (existing) existing.count++;
+      else map.set(key, { id: slugify(key), label: key, count: 1 });
+    }
   }
   return Array.from(map.values()).sort((a, b) => b.count - a.count);
 }

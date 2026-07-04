@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ViewSwitcher, { type ViewMode } from './ViewSwitcher';
 import EventDetailModal from './EventDetailModal';
 import type { CCFEvent, Division, JourneyStage } from '@/lib/events';
@@ -29,10 +29,26 @@ export default function DivisionViewClient({
 
   const entityFilter = sp.get('entity');
   const [selectedEvent, setSelectedEvent] = useState<CCFEvent | null>(null);
+  const router = useRouter();
 
-  // Filter events by selected entity
+  // Auto-clear invalid entity filter (e.g., bookmarked URL to an entity whose events are all past)
+  useEffect(() => {
+    if (entityFilter && !entities.some((ent) => ent.id === entityFilter)) {
+      const params = new URLSearchParams(sp.toString());
+      params.delete('entity');
+      const qs = params.toString();
+      router.replace(`/division/${division.id}${qs ? '?' + qs : ''}`);
+    }
+  }, [entityFilter, entities, division.id, sp, router]);
+
+  // Filter events by selected entity — match any comma-split originator part
   const filtered = entityFilter
-    ? events.filter((e) => e.originator.toLowerCase().replace(/[^a-z0-9]+/g, '-') === entityFilter)
+    ? events.filter((e) =>
+        e.originator
+          .split(',')
+          .map((p) => p.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'))
+          .includes(entityFilter),
+      )
     : events;
 
   // Group by month for display
