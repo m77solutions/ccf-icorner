@@ -50,10 +50,10 @@ export default function EventQRCode({ event, size = 140 }: Props) {
         📱 Scan with your phone's CAMERA app to add to your calendar
       </p>
     
-      <div className="icsUrl-display" style={{ marginTop: 6, fontSize: 9, color: '#94A3B8', wordBreak: 'break-all', maxWidth: 180, lineHeight: 1.3 }}>
+      <div className="icsUrl-display" style={{ marginTop: 6, fontSize: 9, color: '#94A3B8', wordBreak: 'break-all', maxWidth: 180, lineHeight: 1.3, textAlign: 'center' }}>
         {icsUrl}
       </div>
-      <div style={{ marginTop: 4, fontSize: 9, color: '#64748B', fontStyle: 'italic', maxWidth: 180 }}>
+      <div style={{ marginTop: 4, fontSize: 9, color: '#64748B', fontStyle: 'italic', maxWidth: 180, textAlign: 'center' }}>
         ⚠️ Android: Use built-in Camera or Google Lens. Do NOT use "QR Scanner" apps — they may redirect to ads/Lazada.
       </div>
 </div>
