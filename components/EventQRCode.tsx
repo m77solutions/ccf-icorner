@@ -38,13 +38,13 @@ export default function EventQRCode({ event, size = 140 }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%' }}>
       <img
         src={dataUrl}
         alt={`QR code to add ${event.activity} to your calendar`}
         width={size}
         height={size}
-        className="rounded border border-gray-200"
+        className="rounded border border-gray-200" style={{ display: 'block', margin: '0 auto' }}
       />
       <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', textAlign: 'center', maxWidth: 240, marginTop: 8, marginBottom: 0, lineHeight: 1.4 }}>
         📱 Scan to add to your calendar
