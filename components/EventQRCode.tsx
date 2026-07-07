@@ -46,14 +46,14 @@ export default function EventQRCode({ event, size = 140 }: Props) {
         height={size}
         className="rounded border border-gray-200"
       />
-      <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', textAlign: 'center', maxWidth: 220, marginTop: 8, marginBottom: 0, lineHeight: 1.4 }}>
+      <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', textAlign: 'center', maxWidth: 240, marginTop: 8, marginBottom: 0, lineHeight: 1.4 }}>
         📱 Scan to add to your calendar
       </p>
-      <p style={{ fontSize: 12, fontWeight: 600, color: '#DC2626', textAlign: 'center', maxWidth: 220, marginTop: 4, marginBottom: 0, lineHeight: 1.4 }}>
+      <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', textAlign: 'center', maxWidth: 240, marginTop: 8, marginBottom: 0, lineHeight: 1.4 }}>
         Please USE built-in Camera app,<br/>NOT QR Scanner apps
       </p>
     
-      <div className="icsUrl-display" style={{ marginTop: 6, fontSize: 9, color: '#94A3B8', wordBreak: 'break-all', maxWidth: 180, lineHeight: 1.3, textAlign: 'center' }}>
+      <div className="icsUrl-display" style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', wordBreak: 'break-all', textAlign: 'center', maxWidth: 240, marginTop: 6, marginBottom: 0, lineHeight: 1.4 }}>
         {icsUrl}
       </div>
       </div>
