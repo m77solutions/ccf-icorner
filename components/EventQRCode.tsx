@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import type { CCFEvent } from '@/lib/events';
 
-const SITE_URL = 'https://mango-rock-03cc67610.7.azurestaticapps.net';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://icorner.m77solutions.com';
 
 type Props = {
   event: CCFEvent;
