@@ -1,39 +1,31 @@
 // lib/events-data.ts
-// Server-only module: fetches events from Google Sheets CSV at build time.
+// Server-only module: fetches events from WordPress at build time.
+// Source of truth: https://m77solutions.com/icms (WordPress CMS)
 // Uses top-level await — DO NOT import from client components.
 
-import Papa from 'papaparse';
 import {
   EVENTS_RAW,
-  DIVISIONS,
   type CCFEvent,
   type JourneyStage,
   type DivisionId,
-  type Division,
 } from './events';
 
-const CSV_URL =
-  'https://docs.google.com/spreadsheets/d/1KahZ8fDuOj6nxTMw1FgDnx5suo2pSNSy7L4tz-eyPF4/export?format=csv&gid=1592089368';
+const WP_API_BASE =
+  process.env.NEXT_PUBLIC_WP_API_BASE ??
+  'https://m77solutions.com/icms/wp-json/wp/v2';
 
-// ───── helpers ─────
-
-function mdyToISO(s: string): string {
-  if (!s || !s.trim()) return '';
-  const [m, d, y] = s.trim().split('/').map((x) => x.trim());
-  if (!m || !d || !y) return '';
-  return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-}
-
-function isConferenceStage(s: string): boolean {
-  return s.trim().toUpperCase() === 'CONFERENCE';
-}
+// ───── helpers (unchanged from CSV era — reused where useful) ─────
 
 function normalizeStage(s: string): JourneyStage {
-  const t = s.trim().toUpperCase();
+  const t = (s || '').trim().toUpperCase();
   if (t === 'EDIFY') return 'Edify';
   if (t === 'EQUIP') return 'Equip';
   if (t === 'EMPOWER') return 'Empower';
   return 'Engage';
+}
+
+function isConferenceStage(s: string): boolean {
+  return (s || '').trim().toUpperCase() === 'CONFERENCE';
 }
 
 function monthLabelFromISO(iso: string): string {
@@ -61,12 +53,12 @@ function formatMonthDay(iso: string): string {
 }
 
 function buildDateLabel(
-  eventType: string,
+  isContiguous: boolean,
   startDate: string,
   endDate: string,
   occurrences?: string[],
 ): string {
-  if (eventType === 'Recurring (multiple dates)' && occurrences?.length) {
+  if (!isContiguous && occurrences?.length) {
     return [...occurrences].sort().map(formatMonthDay).join(', ');
   }
   if (startDate === endDate) return formatMonthDay(startDate);
@@ -88,11 +80,13 @@ function normalizeRegLink(link: string): string {
   return `https://${trimmed}`;
 }
 
-function parseCost(raw: string): number | null {
-  if (!raw || !raw.trim()) return null;
-  const t = raw.trim().toUpperCase();
+function parseCost(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === '') return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  const t = s.toUpperCase();
   if (t === 'FREE') return 0;
-  const match = raw.match(/[\d,]+/);
+  const match = s.match(/[\d,]+/);
   if (!match) return null;
   const num = parseInt(match[0].replace(/,/g, ''), 10);
   return isNaN(num) ? null : num;
@@ -101,80 +95,125 @@ function parseCost(raw: string): number | null {
 function formatTimeLabel(raw: string): string {
   if (!raw || !raw.trim()) return '';
   const t = raw.trim();
-  // "1:00:00 PM" → "1:00 PM"
   const match = t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
   if (!match) return t;
   const [, h, m, ampm] = match;
   return `${parseInt(h, 10)}:${m}${ampm ? ` ${ampm.toUpperCase()}` : ''}`;
 }
 
-// ───── CSV row → CCFEvent[] (multi-stage rows expand to N events) ─────
+function decodeHtml(s: string): string {
+  return s
+    .replace(/&#8217;/g, '’')
+    .replace(/&#8216;/g, '‘')
+    .replace(/&#8220;/g, '“')
+    .replace(/&#8221;/g, '”')
+    .replace(/&#8211;/g, '–')
+    .replace(/&#8212;/g, '—')
+    .replace(/&#038;/g, '&')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
 
-type CSVRow = Record<string, string>;
+// ───── WordPress types ─────
 
-function parseRow(row: CSVRow, idx: number): CCFEvent[] {
-  const organizer = (row['ORGANIZER'] || '').trim();
-  const eventName = (row['EVENT'] || '').trim();
-  if (!organizer || !eventName) return [];
+type WPMinistry = { id: number; name: string; slug: string };
 
-  const eventType = (row['EVENT TYPE'] || '').trim();
-  const stageRaw = (row['EVENT DJ STAGE'] || 'ENGAGE').trim();
-  const stages = stageRaw
+type WPEvent = {
+  id: number;
+  slug: string;
+  status: string;
+  title: { rendered: string };
+  ministry: number[];
+  acf: {
+    journey_stage?: string;
+    originator?: string;
+    activity?: string;
+    activity_detail?: string;
+    start_date?: string;
+    end_date?: string;
+    time_label?: string;
+    location?: string;
+    contact_person?: string;
+    contact_number?: string;
+    platform?: string;
+    cost?: string | number;
+    registration_status?: string;
+    is_contiguous?: boolean | string | number;
+    occurrences?: string | string[];
+    other_info?: string;
+    is_conference?: boolean | string;
+  };
+};
+
+// ───── WordPress → CCFEvent mapper ─────
+// Produces the exact same CCFEvent shape the rest of the app expects.
+// Multi-stage events (e.g. "ENGAGE, EDIFY") split into N CCFEvent objects.
+
+function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[] {
+  const acf = wp.acf ?? {};
+
+  // ─ Dates ─
+  const startDate = (acf.start_date || '').trim();
+  const endDate = (acf.end_date || startDate || '').trim();
+  if (!startDate) return [];
+
+  // ─ Occurrences (may arrive as CSV string or array) ─
+  let occurrences: string[] | undefined;
+  let isContiguous = true;
+  if (acf.is_contiguous === false || acf.is_contiguous === 'false' || acf.is_contiguous === 0) {
+    isContiguous = false;
+  }
+  if (acf.occurrences) {
+    const raw = Array.isArray(acf.occurrences)
+      ? acf.occurrences
+      : String(acf.occurrences).split(',');
+    occurrences = raw
+      .map((s) => String(s).trim())
+      .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
+      .sort();
+    if (occurrences.length > 0) isContiguous = false;
+    else occurrences = undefined;
+  }
+
+  // ─ Journey stage(s) — may be comma-separated ─
+  const stageRaw = acf.journey_stage || 'ENGAGE';
+  const stages = String(stageRaw)
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
 
-  let startDate = '';
-  let endDate = '';
-  let isContiguous = true;
-  let occurrences: string[] | undefined;
-
-  if (eventType === 'Single Day') {
-    startDate = mdyToISO(row['DATE'] || '');
-    endDate = startDate;
-  } else if (eventType === 'Multi-Day (consecutive)') {
-    startDate = mdyToISO(row['START DATE'] || '');
-    endDate = mdyToISO(row['END DATE'] || '');
-  } else if (eventType === 'Recurring (multiple dates)') {
-    const raw = (row['RECURRING DATES'] || '').trim();
-    occurrences = raw
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
-      .sort();
-    if (occurrences.length === 0) return [];
-    startDate = occurrences[0];
-    endDate = occurrences[occurrences.length - 1];
-    isContiguous = false;
-  } else {
-    return [];
-  }
-
-  if (!startDate || !endDate) return [];
-
+  // ─ Common fields ─
+  const rawTitle = decodeHtml(wp.title?.rendered || '');
+  const activity = (acf.activity || rawTitle || '').trim();
+  const activityDetail = (acf.activity_detail || rawTitle || '').trim();
+  const organizer = (acf.originator || ministries.get(wp.ministry?.[0])?.name || '').trim();
   const month = monthLabelFromISO(startDate);
   const monthSlug = monthSlugFromLabel(month);
-  const dateLabel = buildDateLabel(eventType, startDate, endDate, occurrences);
-  const activity = eventName;
-  const activityDetail = (row['EVENT TITLE'] || '').trim();
-  const timeLabel = formatTimeLabel(row['TIME'] || '');
-  const location = (row['LOCATION'] || '').trim();
-  const contactPerson = (row['CONTACT PERSON'] || '').trim();
-  const otherInfo = (row['OTHER INFO'] || '').trim();
-  const contactNumber = (row['CONTACT NUMBER'] || '').trim();
-  const platform = normalizeRegLink(row['REGISTRATION LINK'] || '');
-  const cost = parseCost(row['AMOUNT'] || '');
-  const baseId =
-    slugify(`${organizer}-${activity}-${startDate}`) || `row-${idx}`;
+  const dateLabel = buildDateLabel(isContiguous, startDate, endDate, occurrences);
+  const timeLabel = formatTimeLabel(String(acf.time_label || ''));
+  const location = String(acf.location || '').trim();
+  const contactPerson = String(acf.contact_person || '').trim();
+  const contactNumber = String(acf.contact_number || '').trim();
+  const platform = normalizeRegLink(String(acf.platform || ''));
+  const cost = parseCost(acf.cost);
+  const otherInfo = String(acf.other_info || '').trim() || undefined;
+  const regStatus = (String(acf.registration_status || 'N/A').toUpperCase() as
+    | 'OPEN'
+    | 'CLOSED'
+    | 'N/A') || 'N/A';
+  const isConference =
+    acf.is_conference === true ||
+    acf.is_conference === 'true' ||
+    stages.some(isConferenceStage);
 
-  // Multi-stage rows (e.g. "ENGAGE, EDIFY, EQUIP, EMPOWER") split into N events
+  const baseId = wp.slug; // WordPress post slug is our canonical id
+
   return stages.map((stageRaw) => {
     const journeyStage = normalizeStage(stageRaw);
     return {
-      id:
-        stages.length > 1
-          ? `${baseId}-${journeyStage.toLowerCase()}`
-          : baseId,
+      id: stages.length > 1 ? `${baseId}-${journeyStage.toLowerCase()}` : baseId,
       journeyStage,
       originator: organizer,
       activity,
@@ -189,56 +228,63 @@ function parseRow(row: CSVRow, idx: number): CCFEvent[] {
       timeLabel,
       location,
       contactPerson,
-      otherInfo: otherInfo || undefined,
       contactNumber,
       platform,
       cost,
-      regStatus: 'N/A',
-      isConference: stages.some(isConferenceStage),
-    };
+      regStatus: (['OPEN', 'CLOSED', 'N/A'] as const).includes(regStatus) ? regStatus : 'N/A',
+      isConference,
+      otherInfo,
+    } as CCFEvent;
   });
 }
 
-// ───── CSV loader ─────
+// ───── WordPress loader ─────
 
-async function loadEventsFromCSV(): Promise<CCFEvent[]> {
+async function loadEventsFromWordPress(): Promise<CCFEvent[]> {
   try {
-    const res = await fetch(CSV_URL, {
-      // Static export: this fetch runs at build time
-      cache: 'no-store',
-    });
-    if (!res.ok) throw new Error(`CSV fetch failed: HTTP ${res.status}`);
-    const csv = await res.text();
-    const parsed = Papa.parse<CSVRow>(csv, {
-      header: true,
-      skipEmptyLines: true,
-    });
-    if (parsed.errors.length) {
-      console.warn('[events-data] CSV parse warnings:', parsed.errors.slice(0, 3));
-    }
+    // Fetch ministries + events in parallel
+    const [minRes, evRes] = await Promise.all([
+      fetch(`${WP_API_BASE}/ministry?per_page=100`, { cache: 'no-store' }),
+      fetch(`${WP_API_BASE}/events?per_page=100`, { cache: 'no-store' }),
+    ]);
+
+    if (!minRes.ok) throw new Error(`WP ministry fetch failed: HTTP ${minRes.status}`);
+    if (!evRes.ok) throw new Error(`WP events fetch failed: HTTP ${evRes.status}`);
+
+    const ministriesArr: WPMinistry[] = await minRes.json();
+    const ministries = new Map(ministriesArr.map((m) => [m.id, m]));
+    const wpEvents: WPEvent[] = await evRes.json();
+
     const events: CCFEvent[] = [];
-    parsed.data.forEach((row, idx) => {
-      events.push(...parseRow(row, idx));
-    });
+    for (const wp of wpEvents) {
+      events.push(...mapWPEvent(wp, ministries));
+    }
+
     if (events.length === 0) {
-      console.warn('[events-data] CSV returned 0 events — using EVENTS_RAW fallback');
+      console.warn('[events-data] WordPress returned 0 events — using EVENTS_RAW fallback');
       return EVENTS_RAW;
     }
-    console.log(`[events-data] Loaded ${events.length} events from CSV`);
+
+    console.log(`[events-data] ✅ Loaded ${events.length} events from WordPress (${wpEvents.length} posts)`);
     return events;
   } catch (err) {
-    console.warn('[events-data] CSV fetch failed, using EVENTS_RAW fallback:', err);
+    console.warn('[events-data] ⚠️  WordPress fetch failed, using EVENTS_RAW fallback:', err);
     return EVENTS_RAW;
   }
 }
 
 // ───── module-level: top-level await fires at build time ─────
 
-export const EVENTS: CCFEvent[] = await loadEventsFromCSV();
+export const EVENTS: CCFEvent[] = await loadEventsFromWordPress();
 
-// ───── query functions (mirror old lib/events.ts API) ─────
+// ═════════════════════════════════════════════════════════════════════
+// Query functions — signatures IDENTICAL to prior CSV-era exports.
+// Downstream files (10+ pages/components) require zero changes.
+// ═════════════════════════════════════════════════════════════════════
 
-export function getAllMonths(includePast: boolean = false): { month: string; slug: string; count: number }[] {
+export function getAllMonths(
+  includePast: boolean = false,
+): { month: string; slug: string; count: number }[] {
   const events = includePast ? EVENTS : getActiveEvents(EVENTS);
   const map = new Map<string, { month: string; slug: string; count: number }>();
   for (const e of events) {
@@ -254,13 +300,15 @@ export function getAllMonths(includePast: boolean = false): { month: string; slu
 }
 
 export function getEventsByMonth(slug: string): CCFEvent[] {
-  return getActiveEvents(EVENTS).filter((e) => {
-    if (e.monthSlug === slug) return true;
-    if (e.occurrences) {
-      return e.occurrences.some((d) => monthSlugFromLabel(monthLabelFromISO(d)) === slug);
-    }
-    return false;
-  }).sort((a, b) => a.startDate.localeCompare(b.startDate));
+  return getActiveEvents(EVENTS)
+    .filter((e) => {
+      if (e.monthSlug === slug) return true;
+      if (e.occurrences) {
+        return e.occurrences.some((d) => monthSlugFromLabel(monthLabelFromISO(d)) === slug);
+      }
+      return false;
+    })
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
 export function getEventsByStage(stage: JourneyStage): CCFEvent[] {
@@ -274,20 +322,19 @@ export function getCurrentMonthSlug(): string {
     const firstEvent = EVENTS.find((e) => e.monthSlug === m.slug);
     return firstEvent && firstEvent.startDate >= today;
   });
-  return upcoming?.slug ?? months[0]?.slug ?? 'june-2026';
+  return upcoming?.slug ?? months[0]?.slug ?? 'august-2026';
 }
 
 export function getEventDivision(event: CCFEvent): DivisionId {
   if (event.isConference) return 'conference';
 
-  const originator = event.originator.trim().toUpperCase();
+  const originator = (event.originator || '').trim().toUpperCase();
   const firstToken = originator.split(/[\s-]/)[0];
 
   // GLC (Global Leadership Center)
   if (firstToken === 'D' || firstToken === 'GLC') return 'glc';
 
-  // EXCEPTION: Pastoral Care Department (PCD) is a MINISTRY, not a Pastoral Area.
-  // Must be checked BEFORE the generic "PASTORAL" match below.
+  // Pastoral Care Department = MINISTRY (not Pastoral Area)
   if (
     firstToken === 'PCD' ||
     originator.includes('PCD') ||
@@ -296,12 +343,7 @@ export function getEventDivision(event: CCFEvent): DivisionId {
     return 'ministries';
   }
 
-  // Pastoral Areas — includes:
-  //   • PA - <name> (e.g., "PA - RICKY SARTHOU")
-  //   • S / satellites
-  //   • LUZON (any LUZON-prefixed entity)
-  //   • CCF <region> (e.g., "CCF LUZON SOUTH", "CCF LUZON CENTRAL", "CCF NORTH EDSA")
-  //   • Any originator containing "LUZON", "SATELLITE", or the region tags
+  // Pastoral Areas
   if (
     firstToken === 'P' ||
     firstToken === 'PA' ||
@@ -316,73 +358,63 @@ export function getEventDivision(event: CCFEvent): DivisionId {
     return 'pastoral-areas';
   }
 
-  // Ministries (WOW, Intercede, M-prefix, etc.)
+  // Ministries
   if (firstToken === 'M' || firstToken === 'WOW' || firstToken === 'INTERCEDE') {
     return 'ministries';
   }
 
-  // Default: ministries (safe fallback)
   return 'ministries';
 }
 
 export function getEventsByDivision(divisionId: DivisionId): CCFEvent[] {
-  return getActiveEvents(EVENTS).filter((e) => getEventDivision(e) === divisionId).sort((a, b) =>
-    a.startDate.localeCompare(b.startDate),
-  );
+  return getActiveEvents(EVENTS)
+    .filter((e) => getEventDivision(e) === divisionId)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
 export function getEntitiesInDivision(
   divisionId: DivisionId,
 ): { id: string; label: string; count: number }[] {
   const map = new Map<string, { id: string; label: string; count: number }>();
-  for (const e of getActiveEvents(EVENTS)) {
+  for (const e of EVENTS) {
     if (getEventDivision(e) !== divisionId) continue;
-    // Split combined originators like "BEYOND, WOW" or "PA - X, PA - Y" into individual entities
-    const parts = e.originator.split(',').map(p => p.trim()).filter(Boolean);
-    for (const key of parts) {
-      const existing = map.get(key);
-      if (existing) existing.count++;
-      else map.set(key, { id: slugify(key), label: key, count: 1 });
-    }
+    const key = e.originator;
+    const existing = map.get(key);
+    if (existing) existing.count++;
+    else map.set(key, { id: slugify(key), label: key, count: 1 });
   }
   return Array.from(map.values()).sort((a, b) => b.count - a.count);
 }
 
 export function getEventsByJourneyStage(stageId: string): CCFEvent[] {
   const target = stageId.toLowerCase();
-  return getActiveEvents(EVENTS).filter((e) => e.journeyStage.toLowerCase() === target).sort((a, b) =>
-    a.startDate.localeCompare(b.startDate),
-  );
+  return getActiveEvents(EVENTS)
+    .filter((e) => e.journeyStage.toLowerCase() === target)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
-
 
 // ============================================
 // Month-to-month filter (Pastor Ricky's request)
 // Returns events whose END month is >= current month.
-// Multi-day events spanning months stay visible through their end month.
 // ============================================
 export function getActiveEvents(allEvents: CCFEvent[] = EVENTS): CCFEvent[] {
   const currentYM = getCurrentManilaYM();
   const todayISO = getTodayManilaISO();
 
   return allEvents
-    .filter(e => {
-      // Drop event entirely if its END is before current month
+    .filter((e) => {
       const endYM = (e.endDate || e.startDate).slice(0, 7);
       return endYM >= currentYM;
     })
-    .map(e => {
-      // For recurring events, filter out past occurrences
+    .map((e) => {
       if (e.occurrences && e.occurrences.length > 0) {
-        const futureOccurrences = e.occurrences.filter(d => d >= todayISO);
+        const futureOccurrences = e.occurrences.filter((d) => d >= todayISO);
         if (futureOccurrences.length === 0) return null;
-        // Recompute derived fields from the remaining occurrences
         const newStartDate = futureOccurrences[0];
         const newEndDate = futureOccurrences[futureOccurrences.length - 1];
         const newMonth = monthLabelFromISO(newStartDate);
         const newMonthSlug = monthSlugFromLabel(newMonth);
-        // Rebuild dateLabel: "Jul 11" or "Jul 11, Jul 25, Aug 1"
-        const newDateLabel = futureOccurrences.map(d => formatMonthDay(d)).join(', ');
+        const newDateLabel = futureOccurrences.map((d) => formatMonthDay(d)).join(', ');
         return {
           ...e,
           startDate: newStartDate,
@@ -393,13 +425,11 @@ export function getActiveEvents(allEvents: CCFEvent[] = EVENTS): CCFEvent[] {
           dateLabel: newDateLabel,
         };
       }
-      // For non-recurring events, keep as-is (they already passed the endYM check)
       return e;
     })
     .filter((e): e is CCFEvent => e !== null);
 }
 
-// Helper: today in Asia/Manila as YYYY-MM-DD
 export function getTodayManilaISO(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Manila',
@@ -407,28 +437,28 @@ export function getTodayManilaISO(): string {
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(new Date());
-  const y = parts.find(p => p.type === 'year')!.value;
-  const m = parts.find(p => p.type === 'month')!.value;
-  const d = parts.find(p => p.type === 'day')!.value;
+  const y = parts.find((p) => p.type === 'year')!.value;
+  const m = parts.find((p) => p.type === 'month')!.value;
+  const d = parts.find((p) => p.type === 'day')!.value;
   return `${y}-${m}-${d}`;
 }
 
-// Bulletproof: get current YYYY-MM in Asia/Manila regardless of build env timezone
 export function getCurrentManilaYM(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Manila',
     year: 'numeric',
     month: '2-digit',
   }).formatToParts(new Date());
-  const y = parts.find(p => p.type === 'year')!.value;
-  const m = parts.find(p => p.type === 'month')!.value;
+  const y = parts.find((p) => p.type === 'year')!.value;
+  const m = parts.find((p) => p.type === 'month')!.value;
   return `${y}-${m}`;
 }
 
 // ============================================
 // Data Quality Check (Ate Judy's request)
-// Flags rows with common data-entry problems.
+// Flags events with missing/invalid data.
 // ============================================
+
 export type DataQualityIssue = {
   eventId: string;
   eventTitle: string;
@@ -483,4 +513,3 @@ export function getDataQualityIssues(allEvents: CCFEvent[] = EVENTS): DataQualit
     return a.originator.localeCompare(b.originator);
   });
 }
-
