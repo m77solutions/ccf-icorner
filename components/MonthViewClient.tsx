@@ -190,18 +190,22 @@ function CalendarView({
                 background: !inMonth ? '#F3F4F6' : isWeekend ? '#FAFCFE' : '#FFFFFF',
                 padding: 6,
                 minHeight: 120,
+                maxHeight: 200,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 4,
                 minWidth: 0,
-                overflow: 'hidden',
+                overflowY: 'auto',
+                overflowX: 'hidden',
                 opacity: inMonth ? 1 : 0.45,
+
               }}
             >
               <div style={{ fontSize: 14, fontWeight: 700, color: inMonth ? '#0F172A' : '#94A3B8', textAlign: 'right', padding: '2px 4px' }}>
                 {day.getDate()}
               </div>
-              {dayEvents.slice(0, 3).map((e) => {
+                {dayEvents.map((e) => {
+
                 const c = e.isConference
                   ? { bg: '#F3E8FF', text: '#9333EA', border: '#9333EA' }
                   : stageColors[e.journeyStage];
@@ -228,12 +232,7 @@ function CalendarView({
                     {e.activity}
                   </div>
                 );
-              })}
-              {dayEvents.length > 3 && (
-                <div style={{ fontSize: 10, color: '#64748B', fontWeight: 700, padding: '0 4px' }}>
-                  +{dayEvents.length - 3} more
-                </div>
-              )}
+              })}            
             </div>
           );
         })}
