@@ -190,10 +190,13 @@ type WPEvent = {
     platform?: string;
     cost?: string | number;
     registration_status?: string;
-    is_contiguous?: boolean | string | number;
     occurrences?: string | string[];
     other_info?: string;
     is_conference?: boolean | string;
+    is_recurring?: boolean | string | number;   // new field name (as of 2026-08-15)
+    is_contiguous?: boolean | string | number;  // legacy — kept for backward compat
+    occurrences?: string | string[];
+
   };
 };
 
@@ -214,23 +217,50 @@ function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[
     return [];
   }
 
-  // ─ Occurrences (may arrive as CSV string or array, each element normalized) ─
+    // ─ Occurrences (may arrive as CSV string or array, each element normalized) ─
   let occurrences: string[] | undefined;
   let isContiguous = true;
-  if (acf.is_contiguous === false || acf.is_contiguous === 'false' || acf.is_contiguous === 0) {
-    isContiguous = false;
-  }
+
+  // Parse occurrences first (if any)
   if (acf.occurrences) {
     const raw = Array.isArray(acf.occurrences)
       ? acf.occurrences
       : String(acf.occurrences).split(',');
-    occurrences = raw
+    const parsed = raw
       .map((s) => normalizeACFDate(s))
       .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
       .sort();
-    if (occurrences.length > 0) isContiguous = false;
-    else occurrences = undefined;
+    if (parsed.length > 0) {
+      occurrences = parsed;
+      isContiguous = false;
+    }
   }
+
+  // Read "Recurring Event?" flag (new field name = is_recurring).
+  // Also fall back to legacy is_contiguous for backward compat during migration.
+  // Semantics: is_recurring = true  → non-contiguous (separate dates)
+  //            is_recurring = false → contiguous (single day or spanning range)
+  const isRecurringFlag =
+    acf.is_recurring === true ||
+    acf.is_recurring === 'true' ||
+    acf.is_recurring === 1 ||
+    acf.is_recurring === '1';
+
+  const legacyIsContiguousFalse =
+    acf.is_contiguous === false ||
+    acf.is_contiguous === 'false' ||
+    acf.is_contiguous === 0 ||
+    acf.is_contiguous === '0';
+
+  // Only honor "recurring" when there are actual occurrences to enumerate.
+  // A recurring event with no occurrences listed is nonsensical → treat as
+  // single-range contiguous (fixes Ate Judy's BOOK 1 rendering bug).
+  if (occurrences && (isRecurringFlag || legacyIsContiguousFalse)) {
+    isContiguous = false;
+  } else {
+    isContiguous = true;
+  }
+
 
   // ─ Journey stage(s) — may be comma-separated ─
   const stageRaw = acf.journey_stage || 'ENGAGE';
