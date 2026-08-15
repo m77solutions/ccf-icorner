@@ -28,7 +28,55 @@ function isConferenceStage(s: string): boolean {
   return (s || '').trim().toUpperCase() === 'CONFERENCE';
 }
 
+/**
+ * Normalizes an ACF Date Picker value to ISO `YYYY-MM-DD`.
+ * Handles all common ACF/WP formats defensively:
+ *   • "2026-09-06"    → "2026-09-06"  (already ISO)
+ *   • "20260906"      → "2026-09-06"  (ACF raw Ymd storage)
+ *   • "09/06/2026"    → "2026-09-06"  (m/d/Y)
+ *   • "06/09/2026"    → "2026-09-06"  (d/m/Y — only if unambiguous, else m/d/Y)
+ *   • ""              → ""            (empty stays empty)
+ *   • anything else   → ""            (invalid, caller can flag)
+ *
+ * This makes the pipeline resilient to ACF Return Format misconfiguration.
+ */
+function normalizeACFDate(raw: string | number | null | undefined): string {
+  if (raw === null || raw === undefined) return '';
+  const s = String(raw).trim();
+  if (!s) return '';
+
+  // Already ISO (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // Compact Ymd (YYYYMMDD) — ACF's raw storage format
+  if (/^\d{8}$/.test(s)) {
+    return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  }
+
+  // m/d/Y or d/m/Y (default to m/d/Y — US locale, which is what WP defaults to)
+  const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    const [, a, b, y] = slashMatch;
+    const mm = a.padStart(2, '0');
+    const dd = b.padStart(2, '0');
+    return `${y}-${mm}-${dd}`;
+  }
+
+  // Fallback: try Date.parse (handles "September 6, 2026" etc.)
+  const parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  console.warn(`[events-data] ⚠️  Could not normalize date value: "${s}"`);
+  return '';
+}
+
 function monthLabelFromISO(iso: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return 'Invalid Date';
   const [y, m] = iso.split('-').map(Number);
   const date = new Date(y, m - 1, 1);
   return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
@@ -47,6 +95,7 @@ function slugify(s: string): string {
 }
 
 function formatMonthDay(iso: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return 'Invalid Date';
   const [y, m, d] = iso.split('-').map(Number);
   const date = new Date(y, m - 1, d);
   return date.toLocaleString('en-US', { month: 'short', day: 'numeric' });
@@ -58,6 +107,7 @@ function buildDateLabel(
   endDate: string,
   occurrences?: string[],
 ): string {
+  if (!startDate) return 'Invalid Date';
   if (!isContiguous && occurrences?.length) {
     return [...occurrences].sort().map(formatMonthDay).join(', ');
   }
@@ -154,12 +204,17 @@ type WPEvent = {
 function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[] {
   const acf = wp.acf ?? {};
 
-  // ─ Dates ─
-  const startDate = (acf.start_date || '').trim();
-  const endDate = (acf.end_date || startDate || '').trim();
-  if (!startDate) return [];
+  // ─ Dates (defensively normalized — handles Y-m-d, Ymd, m/d/Y, etc.) ─
+  const startDate = normalizeACFDate(acf.start_date);
+  const endDate = normalizeACFDate(acf.end_date) || startDate;
+  if (!startDate) {
+    console.warn(
+      `[events-data] ⚠️  Event "${wp.slug}" (id=${wp.id}) has no valid start_date — skipping.`,
+    );
+    return [];
+  }
 
-  // ─ Occurrences (may arrive as CSV string or array) ─
+  // ─ Occurrences (may arrive as CSV string or array, each element normalized) ─
   let occurrences: string[] | undefined;
   let isContiguous = true;
   if (acf.is_contiguous === false || acf.is_contiguous === 'false' || acf.is_contiguous === 0) {
@@ -170,7 +225,7 @@ function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[
       ? acf.occurrences
       : String(acf.occurrences).split(',');
     occurrences = raw
-      .map((s) => String(s).trim())
+      .map((s) => normalizeACFDate(s))
       .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
       .sort();
     if (occurrences.length > 0) isContiguous = false;
@@ -265,7 +320,9 @@ async function loadEventsFromWordPress(): Promise<CCFEvent[]> {
       return EVENTS_RAW;
     }
 
-    console.log(`[events-data] ✅ Loaded ${events.length} events from WordPress (${wpEvents.length} posts)`);
+    console.log(
+      `[events-data] ✅ Loaded ${events.length} events from WordPress (${wpEvents.length} posts)`,
+    );
     return events;
   } catch (err) {
     console.warn('[events-data] ⚠️  WordPress fetch failed, using EVENTS_RAW fallback:', err);
