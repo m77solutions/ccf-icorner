@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { EVENTS } from '@/lib/events-data';
 import { STAGE_COLORS, type CCFEvent } from '@/lib/events';
+import ShareButton from './ShareButton';
 
 function findEventById(id: string): CCFEvent | undefined {
   return EVENTS.find((e) => e.id === id);
@@ -59,7 +60,7 @@ export default async function EventPage(
 
   const stage = STAGE_COLORS[event.journeyStage] ?? STAGE_COLORS.Engage;
   const eventUrl = `https://icorner.m77solutions.com/events/${id}`;
-  const shareText = `${event.activity} — ${event.dateLabel}${event.timeLabel ? ' at ' + event.timeLabel : ''}`;
+  const eventDateFull = `${event.dateLabel}${event.timeLabel ? ' · ' + event.timeLabel : ''}`;
 
   // Related events: same journey stage, excluding self, max 4
   const related = EVENTS
@@ -211,7 +212,12 @@ export default async function EventPage(
           >
             📆 Add to Calendar
           </a>
-          <ShareButton url={eventUrl} text={shareText} />
+          <ShareButton
+            eventUrl={eventUrl}
+            eventTitle={event.activity}
+            eventDate={eventDateFull}
+            eventLocation={event.location || undefined}
+          />
         </div>
 
         {/* QR code */}
@@ -314,22 +320,5 @@ function DetailRow({ label, value, href }: { label: string; value: string; href?
       <span style={{ color: '#64748B', fontWeight: 600 }}>{label}</span>
       {val}
     </div>
-  );
-}
-
-function ShareButton({ url, text }: { url: string; text: string }) {
-  const shareText = encodeURIComponent(`${text}\n${url}`);
-  return (
-    <a
-      href={`viber://forward?text=${shareText}`}
-      style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        background: '#1FA3C0', color: 'white',
-        padding: '14px 16px', borderRadius: 12,
-        textDecoration: 'none', fontWeight: 600, fontSize: 14,
-      }}
-    >
-      📤 Share Event
-    </a>
   );
 }
