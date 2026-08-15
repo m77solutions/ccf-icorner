@@ -34,7 +34,6 @@ function isConferenceStage(s: string): boolean {
  *   • "2026-09-06"    → "2026-09-06"  (already ISO)
  *   • "20260906"      → "2026-09-06"  (ACF raw Ymd storage)
  *   • "09/06/2026"    → "2026-09-06"  (m/d/Y)
- *   • "06/09/2026"    → "2026-09-06"  (d/m/Y — only if unambiguous, else m/d/Y)
  *   • ""              → ""            (empty stays empty)
  *   • anything else   → ""            (invalid, caller can flag)
  *
@@ -53,7 +52,7 @@ function normalizeACFDate(raw: string | number | null | undefined): string {
     return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
   }
 
-  // m/d/Y or d/m/Y (default to m/d/Y — US locale, which is what WP defaults to)
+  // m/d/Y (US locale, which is what WP defaults to)
   const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (slashMatch) {
     const [, a, b, y] = slashMatch;
@@ -190,13 +189,11 @@ type WPEvent = {
     platform?: string;
     cost?: string | number;
     registration_status?: string;
+    is_recurring?: boolean | string | number;   // renamed from is_contiguous (2026-08-15)
+    is_contiguous?: boolean | string | number;  // legacy — kept for backward compat
     occurrences?: string | string[];
     other_info?: string;
     is_conference?: boolean | string;
-    is_recurring?: boolean | string | number;   // new field name (as of 2026-08-15)
-    is_contiguous?: boolean | string | number;  // legacy — kept for backward compat
-    occurrences?: string | string[];
-
   };
 };
 
@@ -217,15 +214,15 @@ function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[
     return [];
   }
 
-    // ─ Occurrences (may arrive as CSV string or array, each element normalized) ─
+  // ─ Occurrences (may arrive newline-separated, comma-separated, or array) ─
   let occurrences: string[] | undefined;
   let isContiguous = true;
 
-  // Parse occurrences first (if any)
+  // Parse occurrences first — accepts \n, comma, or array input.
   if (acf.occurrences) {
     const raw = Array.isArray(acf.occurrences)
       ? acf.occurrences
-      : String(acf.occurrences).split(',');
+      : String(acf.occurrences).split(/[\n,]+/);
     const parsed = raw
       .map((s) => normalizeACFDate(s))
       .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
@@ -237,7 +234,7 @@ function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[
   }
 
   // Read "Recurring Event?" flag (new field name = is_recurring).
-  // Also fall back to legacy is_contiguous for backward compat during migration.
+  // Fall back to legacy is_contiguous for backward compat during migration.
   // Semantics: is_recurring = true  → non-contiguous (separate dates)
   //            is_recurring = false → contiguous (single day or spanning range)
   const isRecurringFlag =
@@ -252,15 +249,14 @@ function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[
     acf.is_contiguous === 0 ||
     acf.is_contiguous === '0';
 
-  // Only honor "recurring" when there are actual occurrences to enumerate.
-  // A recurring event with no occurrences listed is nonsensical → treat as
-  // single-range contiguous (fixes Ate Judy's BOOK 1 rendering bug).
+  // Only treat as non-contiguous when explicitly recurring AND we have occurrences.
+  // A "recurring" flag with no occurrences listed is nonsensical — render as
+  // single-range contiguous instead (fixes Ate Judy's BOOK 1 bug).
   if (occurrences && (isRecurringFlag || legacyIsContiguousFalse)) {
     isContiguous = false;
   } else {
     isContiguous = true;
   }
-
 
   // ─ Journey stage(s) — may be comma-separated ─
   const stageRaw = acf.journey_stage || 'ENGAGE';
