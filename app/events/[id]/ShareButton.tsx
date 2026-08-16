@@ -114,18 +114,9 @@ export default function ShareButton(props: ShareButtonProps) {
   const encodedTitle = encodeURIComponent(props.eventTitle);
 
   const handleNativeShare = async () => {
-    if (typeof navigator !== 'undefined' && (navigator as any).share) {
-      try {
-        await (navigator as any).share({
-          title: props.eventTitle,
-          text: captionFull,
-          url: props.eventUrl,
-        });
-        return;
-      } catch (err) {
-        // user cancelled or share failed — fall through to popover
-      }
-    }
+    // Always open the dropdown so users get consistent captions across
+    // desktop and mobile. Desktop navigator.share() drops the 'text' field
+    // on most browsers (Safari, Viber Desktop), stripping our caption.
     setOpen(!open);
   };
 
