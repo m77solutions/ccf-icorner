@@ -1,291 +1,317 @@
-// app/events/[id]/ShareButton.tsx
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 
-type Props = {
+interface ShareButtonProps {
   eventUrl: string;
   eventTitle: string;
-  eventDate?: string;    // e.g. "Sep 6 · 10:30 AM"
+  eventDate?: string;
   eventLocation?: string;
-};
+  eventTime?: string;
+  activityDetail?: string;
+  originator?: string;
+  cost?: number | string;
+  regLink?: string;
+  otherInfo?: string;
+  shareIntro?: string;
+  shareHashtags?: string;
+}
 
-export default function ShareButton({
-  eventUrl,
-  eventTitle,
-  eventDate,
-  eventLocation,
-}: Props) {
+function buildShareCaption(props: ShareButtonProps): string {
+  const {
+    eventUrl,
+    eventTitle,
+    eventDate,
+    eventLocation,
+    eventTime,
+    activityDetail,
+    originator,
+    cost,
+    regLink,
+    otherInfo,
+    shareIntro,
+    shareHashtags,
+  } = props;
+
+  const lines: string[] = [];
+
+  // 1. Optional custom intro paragraph
+  if (shareIntro && shareIntro.trim()) {
+    lines.push(shareIntro.trim());
+    lines.push(''); // blank line
+  }
+
+  // 2. Title + category
+  lines.push(`📌 ${eventTitle}`);
+  const subtitle = [activityDetail, originator].filter(Boolean).join(' · ');
+  if (subtitle) lines.push(subtitle);
+  lines.push('');
+
+  // 3. Date + time
+  const dateTimeParts: string[] = [];
+  if (eventDate) dateTimeParts.push(eventDate);
+  if (eventTime) dateTimeParts.push(eventTime);
+  if (dateTimeParts.length) lines.push(`📅 ${dateTimeParts.join(' | ')}`);
+
+  // 4. Location
+  if (eventLocation) lines.push(`📍 ${eventLocation}`);
+
+  // 5. Cost — always show, "FREE" for 0
+  const costNum = typeof cost === 'string' ? parseFloat(cost) : cost;
+  if (cost === 0 || cost === '0' || cost === '' || cost === undefined || cost === null) {
+    lines.push('🎁 FREE');
+  } else if (typeof cost === 'string' && isNaN(costNum as number)) {
+    // Preserve text like "P17,000 PER COUPLE"
+    lines.push(`💰 ${cost}`);
+  } else if (costNum && costNum > 0) {
+    lines.push(`💰 ₱${costNum.toLocaleString()}`);
+  }
+
+  // 6. Registration link
+  if (regLink && regLink.trim()) {
+    const link = regLink.startsWith('http') ? regLink : `https://${regLink}`;
+    lines.push(`🎟️ Register: ${link}`);
+  }
+
+  // 7. Other info (capped at 200 chars)
+  if (otherInfo && otherInfo.trim()) {
+    let info = otherInfo.trim();
+    if (info.length > 200) info = info.slice(0, 197) + '...';
+    lines.push('');
+    lines.push(info);
+  }
+
+  // 8. Event URL CTA
+  lines.push('');
+  lines.push(`👉 ${eventUrl}`);
+
+  // 9. Hashtags
+  if (shareHashtags && shareHashtags.trim()) {
+    lines.push('');
+    lines.push(shareHashtags.trim());
+  }
+
+  return lines.join('\n');
+}
+
+function buildShortCaption(eventTitle: string, eventUrl: string, hashtags?: string): string {
+  const base = `${eventTitle} — ${eventUrl}`;
+  if (hashtags && (base.length + hashtags.length + 1) < 275) {
+    return `${base} ${hashtags.trim()}`;
+  }
+  return base;
+}
+
+export default function ShareButton(props: ShareButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Rich share text used by every channel
-  const shareText = [
-    `📅 ${eventTitle}`,
-    eventDate && `🗓️ ${eventDate}`,
-    eventLocation && `📍 ${eventLocation}`,
-    '',
-    'Register / Join here 👇',
-    eventUrl,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const captionFull = buildShareCaption(props);
+  const captionShort = buildShortCaption(props.eventTitle, props.eventUrl, props.shareHashtags);
+  const encodedFull = encodeURIComponent(captionFull);
+  const encodedShort = encodeURIComponent(captionShort);
+  const encodedUrl = encodeURIComponent(props.eventUrl);
+  const encodedTitle = encodeURIComponent(props.eventTitle);
 
-  const encodedUrl = encodeURIComponent(eventUrl);
-  const encodedText = encodeURIComponent(shareText);
-  const encodedTitle = encodeURIComponent(eventTitle);
-
-  // Close popover when clicking outside
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
-
-  async function handleShare() {
-    // Try native share sheet first (mobile) — this shows Viber, WhatsApp,
-    // Messenger, iMessage, and every other installed app in one popup.
-    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+  const handleNativeShare = async () => {
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
       try {
-        await navigator.share({
-          title: eventTitle,
-          text: shareText,
-          url: eventUrl,
+        await (navigator as any).share({
+          title: props.eventTitle,
+          text: captionFull,
+          url: props.eventUrl,
         });
         return;
       } catch (err) {
-        // User cancelled or share failed — fall through to popover
-        if ((err as Error).name === 'AbortError') return;
+        // user cancelled or share failed — fall through to popover
       }
     }
-    // Desktop / unsupported → show custom popover
-    setOpen((v) => !v);
-  }
+    setOpen(!open);
+  };
 
-  async function copyLink() {
+  const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(eventUrl);
+      await navigator.clipboard.writeText(captionFull);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback for older browsers
-      const ta = document.createElement('textarea');
-      ta.value = eventUrl;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Copy failed', err);
     }
-  }
+  };
 
-  const platforms: Array<{
-    id: string;
-    label: string;
-    icon: string;
-    href: string;
-    color: string;
-  }> = [
+  const shareTargets = [
     {
-      id: 'facebook',
-      label: 'Facebook',
-      icon: '📘',
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`,
-      color: '#1877F2',
-    },
-    {
-      id: 'messenger',
-      label: 'Messenger',
-      icon: '💬',
-      // fb-messenger:// works on mobile; on desktop, fallback to fb.com/dialog
-      href: `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=291494419107518&redirect_uri=${encodedUrl}`,
-      color: '#0084FF',
-    },
-    {
-      id: 'whatsapp',
       label: 'WhatsApp',
-      icon: '🟢',
-      href: `https://wa.me/?text=${encodedText}`,
+      icon: '💬',
       color: '#25D366',
+      url: `https://wa.me/?text=${encodedFull}`,
     },
     {
-      id: 'viber',
       label: 'Viber',
-      icon: '🟣',
-      href: `viber://forward?text=${encodedText}`,
+      icon: '💜',
       color: '#7360F2',
+      url: `viber://forward?text=${encodedFull}`,
     },
     {
-      id: 'telegram',
       label: 'Telegram',
       icon: '✈️',
-      href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
       color: '#0088CC',
+      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodedFull}`,
     },
     {
-      id: 'twitter',
+      label: 'Messenger',
+      icon: '💌',
+      color: '#0084FF',
+      url: `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=291494419107518&redirect_uri=${encodedUrl}`,
+    },
+    {
+      label: 'Facebook',
+      icon: '👍',
+      color: '#1877F2',
+      url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`,
+    },
+    {
       label: 'X / Twitter',
-      icon: '𝕏',
-      href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
+      icon: '🐦',
       color: '#000000',
+      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(captionShort)}`,
     },
     {
-      id: 'email',
       label: 'Email',
       icon: '✉️',
-      href: `mailto:?subject=${encodedTitle}&body=${encodedText}`,
       color: '#6B7280',
+      url: `mailto:?subject=${encodedTitle}&body=${encodedFull}`,
     },
   ];
 
   return (
-    <div style={{ position: 'relative' }} ref={popoverRef}>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
       <button
-        onClick={handleShare}
+        onClick={handleNativeShare}
         style={{
-          width: '100%',
-          padding: '12px 20px',
-          backgroundColor: '#1FA3C0',
+          background: '#0F172A',
           color: 'white',
           border: 'none',
-          borderRadius: '8px',
-          fontSize: '16px',
+          padding: '12px 20px',
+          borderRadius: 8,
+          fontSize: 14,
           fontWeight: 600,
           cursor: 'pointer',
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
+          gap: 6,
         }}
       >
-        🔗 Share Event
+        📤 Share Event
       </button>
 
       {open && (
-        <div
-          role="dialog"
-          aria-label="Share options"
-          style={{
-            position: 'absolute',
-            bottom: 'calc(100% + 8px)',
-            left: 0,
-            right: 0,
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-            padding: '16px',
-            zIndex: 50,
-            border: '1px solid #E5E7EB',
-          }}
-        >
+        <>
+          {/* backdrop */}
+          <div
+            onClick={() => setOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.4)',
+              zIndex: 998,
+            }}
+          />
+          {/* popover */}
           <div
             style={{
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#6B7280',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '12px',
-              textAlign: 'center',
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              left: 0,
+              background: 'white',
+              border: '1px solid #E5E7EB',
+              borderRadius: 12,
+              boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+              padding: 16,
+              zIndex: 999,
+              minWidth: 280,
             }}
           >
-            Share to
-          </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '10px',
-            }}
-          >
-            {platforms.map((p) => (
-              <a
-                key={p.id}
-                href={p.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '10px 4px',
-                  textDecoration: 'none',
-                  color: '#111827',
-                  fontSize: '11px',
-                  borderRadius: '8px',
-                  transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F3F4F6')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <div
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                marginBottom: 12,
+                color: '#0F172A',
+              }}
+            >
+              Share this event
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 10,
+                marginBottom: 12,
+              }}
+            >
+              {shareTargets.map((t) => (
+                <a
+                  key={t.label}
+                  href={t.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setOpen(false)}
+                  title={t.label}
                   style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '50%',
-                    backgroundColor: p.color,
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '20px',
-                    color: 'white',
-                    fontWeight: 'bold',
+                    gap: 4,
+                    textDecoration: 'none',
+                    color: '#1F2937',
+                    fontSize: 11,
+                    fontWeight: 600,
                   }}
                 >
-                  {p.icon}
-                </div>
-                <span style={{ fontWeight: 500 }}>{p.label}</span>
-              </a>
-            ))}
+                  <span
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      background: t.color,
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 20,
+                    }}
+                  >
+                    {t.icon}
+                  </span>
+                  {t.label}
+                </a>
+              ))}
+            </div>
+
             <button
-              onClick={copyLink}
+              onClick={handleCopy}
               style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '10px 4px',
-                background: 'none',
+                width: '100%',
+                background: copied ? '#10B981' : '#F3F4F6',
+                color: copied ? 'white' : '#1F2937',
                 border: 'none',
+                padding: '10px 12px',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
                 cursor: 'pointer',
-                color: '#111827',
-                fontSize: '11px',
-                borderRadius: '8px',
-                transition: 'background-color 0.15s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F3F4F6')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
-              <div
-                style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  backgroundColor: copied ? '#10B981' : '#374151',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '20px',
-                  color: 'white',
-                }}
-              >
-                {copied ? '✓' : '🔗'}
-              </div>
-              <span style={{ fontWeight: 500 }}>
-                {copied ? 'Copied!' : 'Copy Link'}
-              </span>
+              {copied ? '✓ Copied caption!' : '📋 Copy caption'}
             </button>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

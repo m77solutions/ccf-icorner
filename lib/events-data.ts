@@ -193,6 +193,11 @@ type WPEvent = {
     is_contiguous?: boolean | string | number;  // legacy — kept for backward compat
     occurrences?: string | string[];
     other_info?: string;
+    share_intro?: string;
+    share_hashtags?: string;
+    reg_link?: string;
+    registration_link?: string;
+    registration_qr?: string;
     is_conference?: boolean | string;
   };
 };
@@ -280,6 +285,9 @@ function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[
   const platform = normalizeRegLink(String(acf.platform || ''));
   const cost = parseCost(acf.cost);
   const otherInfo = String(acf.other_info || '').trim() || undefined;
+  const shareIntro = String(acf.share_intro || '').trim() || undefined;
+  const shareHashtags = String(acf.share_hashtags || '').trim() || undefined;
+  const regLink = String(acf.reg_link || acf.registration_link || '').trim() || undefined;
   const regStatus = (String(acf.registration_status || 'N/A').toUpperCase() as
     | 'OPEN'
     | 'CLOSED'
@@ -315,6 +323,9 @@ function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[
       regStatus: (['OPEN', 'CLOSED', 'N/A'] as const).includes(regStatus) ? regStatus : 'N/A',
       isConference,
       otherInfo,
+      shareIntro,
+      shareHashtags,
+      regLink,
     } as CCFEvent;
   });
 }

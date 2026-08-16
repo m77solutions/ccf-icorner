@@ -24,6 +24,9 @@ export type CCFEvent = {
   regStatus: RegStatus;
   isConference?: boolean;
   otherInfo?: string;
+  regLink?: string;
+  shareIntro?: string;
+  shareHashtags?: string;
 };
 
 function normalizeStage(s: string): JourneyStage {

@@ -213,11 +213,19 @@ export default async function EventPage(
             📆 Add to Calendar
           </a>
           <ShareButton
-            eventUrl={eventUrl}
-            eventTitle={event.activity}
-            eventDate={eventDateFull}
-            eventLocation={event.location || undefined}
-          />
+  eventUrl={eventUrl}
+  eventTitle={event.activity}
+  eventDate={event.dateLabel}
+  eventTime={event.timeLabel}
+  eventLocation={event.location}
+  activityDetail={event.activityDetail}
+  originator={event.originator}
+  cost={event.cost}
+  regLink={event.regLink}
+  otherInfo={event.otherInfo}
+  shareIntro={event.shareIntro}
+  shareHashtags={event.shareHashtags}
+/>
         </div>
 
         {/* QR code */}
