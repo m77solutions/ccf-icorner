@@ -10,7 +10,7 @@ interface ShareButtonProps {
   eventTime?: string;
   activityDetail?: string;
   originator?: string;
-  cost?: number | string;
+  cost?: number | string | null;
   regLink?: string;
   otherInfo?: string;
   shareIntro?: string;
