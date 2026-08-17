@@ -24,6 +24,7 @@ export type CCFEvent = {
   regStatus: RegStatus;
   isConference?: boolean;
   otherInfo?: string;
+  posterUrl?: string;
   regLink?: string;
   shareIntro?: string;
   shareHashtags?: string;

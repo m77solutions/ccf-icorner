@@ -40,11 +40,13 @@ export async function generateMetadata(
       siteName: 'iCorner — CCF Welcome Center',
       type: 'article',
       locale: 'en_PH',
+      ...(event.posterUrl ? { images: [{ url: event.posterUrl, alt: `${event.activity} poster` }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
+      ...(event.posterUrl ? { images: [event.posterUrl] } : {}),
     },
     alternates: { canonical: url },
   };
@@ -195,6 +197,43 @@ export default async function EventPage(
             </div>
           )}
         </div>
+
+        {/* Event Poster */}
+        {event.posterUrl && (
+          <div style={{
+            background: 'white',
+            borderRadius: 16,
+            padding: 16,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            marginBottom: 20,
+            textAlign: 'center',
+          }}>
+            <div style={{
+              fontSize: 12,
+              color: '#0891B2',
+              fontWeight: 700,
+              letterSpacing: 0.5,
+              textTransform: 'uppercase',
+              marginBottom: 12,
+              textAlign: 'left',
+            }}>
+              📸 Event Poster
+            </div>
+            <img
+              src={event.posterUrl}
+              alt={`${event.activity} poster`}
+              style={{
+                display: 'block',
+                margin: '0 auto',
+                maxWidth: '100%',
+                width: 'auto',
+                maxHeight: 640,
+                borderRadius: 12,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              }}
+            />
+          </div>
+        )}
 
         {/* Actions: Calendar + Share */}
         <div style={{

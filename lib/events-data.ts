@@ -200,6 +200,18 @@ type WPEvent = {
     registration_qr?: string;
     is_conference?: boolean | string;
   };
+  _embedded?: {
+    'wp:featuredmedia'?: Array<{
+      source_url?: string;
+      media_details?: {
+        sizes?: {
+          large?: { source_url?: string };
+          medium_large?: { source_url?: string };
+          full?: { source_url?: string };
+        };
+      };
+    }>;
+  };
 };
 
 // ───── WordPress → CCFEvent mapper ─────
@@ -208,6 +220,15 @@ type WPEvent = {
 
 function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[] {
   const acf = wp.acf ?? {};
+
+  // ─ Featured image (poster) — prefer 'large' size (~819x1024), fallback to full ─
+  const media = wp._embedded?.['wp:featuredmedia']?.[0];
+  const posterUrl =
+    media?.media_details?.sizes?.large?.source_url ||
+    media?.media_details?.sizes?.medium_large?.source_url ||
+    media?.media_details?.sizes?.full?.source_url ||
+    media?.source_url ||
+    undefined;
 
   // ─ Dates (defensively normalized — handles Y-m-d, Ymd, m/d/Y, etc.) ─
   const startDate = normalizeACFDate(acf.start_date);
@@ -326,6 +347,7 @@ function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[
       shareIntro,
       shareHashtags,
       regLink,
+      posterUrl,
     } as CCFEvent;
   });
 }
@@ -337,7 +359,7 @@ async function loadEventsFromWordPress(): Promise<CCFEvent[]> {
     // Fetch ministries + events in parallel
     const [minRes, evRes] = await Promise.all([
       fetch(`${WP_API_BASE}/ministry?per_page=100`, { cache: 'no-store' }),
-      fetch(`${WP_API_BASE}/events?per_page=100`, { cache: 'no-store' }),
+      fetch(`${WP_API_BASE}/events?per_page=100&_embed=wp:featuredmedia`, { cache: 'no-store' }),
     ]);
 
     if (!minRes.ok) throw new Error(`WP ministry fetch failed: HTTP ${minRes.status}`);
