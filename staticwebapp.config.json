@@ -21,6 +21,16 @@
   },
   "routes": [
     {
+      "route": "/month/august-2026",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
+      "route": "/month/august-2026/*",
+      "redirect": "/month/current/",
+      "statusCode": 302
+    },
+    {
       "route": "/month/july-2026",
       "redirect": "/month/current/",
       "statusCode": 302

@@ -15,6 +15,15 @@ interface ShareButtonProps {
   otherInfo?: string;
   shareIntro?: string;
   shareHashtags?: string;
+  posterUrl?: string;
+}
+
+
+function buildPosterFilename(title: string, date: string | undefined, ext: string): string {
+  const cleanTitle = title.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const cleanDate = (date || '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const base = cleanDate ? `${cleanTitle}_${cleanDate}` : cleanTitle;
+  return `${base}.${ext}`;
 }
 
 function buildShareCaption(props: ShareButtonProps): string {
@@ -114,9 +123,36 @@ export default function ShareButton(props: ShareButtonProps) {
   const encodedTitle = encodeURIComponent(props.eventTitle);
 
   const handleNativeShare = async () => {
-    // Always open the dropdown so users get consistent captions across
-    // desktop and mobile. Desktop navigator.share() drops the 'text' field
-    // on most browsers (Safari, Viber Desktop), stripping our caption.
+    // On mobile with Web Share API Level 2, share poster file + caption + URL
+    // together so Viber/WhatsApp/Messenger receive an attached image.
+    // Desktop and older browsers fall back to the dropdown popover.
+    const isMobile = typeof window !== 'undefined' &&
+      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile && props.posterUrl && typeof navigator !== 'undefined' && (navigator as any).canShare) {
+      try {
+        const res = await fetch(props.posterUrl);
+        const blob = await res.blob();
+        const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+        const filename = buildPosterFilename(props.eventTitle, props.eventDate, ext);
+        const file = new File([blob], filename, { type: blob.type });
+
+        const shareData: any = {
+          title: props.eventTitle,
+          text: captionFull,
+          url: props.eventUrl,
+          files: [file],
+        };
+
+        if ((navigator as any).canShare(shareData)) {
+          await (navigator as any).share(shareData);
+          return;
+        }
+      } catch (err) {
+        // fall through to dropdown
+      }
+    }
+
     setOpen(!open);
   };
 
@@ -280,6 +316,32 @@ export default function ShareButton(props: ShareButtonProps) {
                 </a>
               ))}
             </div>
+
+            {props.posterUrl && (
+              <a
+                href={props.posterUrl}
+                download={buildPosterFilename(props.eventTitle, props.eventDate, 'png')}
+                onClick={() => setOpen(false)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  width: '100%',
+                  background: '#0891B2',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  marginBottom: 8,
+                }}
+              >
+                ⬇️ Download Poster
+              </a>
+            )}
 
             <button
               onClick={handleCopy}

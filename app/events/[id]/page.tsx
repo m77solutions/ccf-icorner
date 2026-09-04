@@ -262,6 +262,7 @@ export default async function EventPage(
   cost={event.cost}
   regLink={event.regLink}
   otherInfo={event.otherInfo}
+  posterUrl={event.posterUrl}
   shareIntro={event.shareIntro}
   shareHashtags={event.shareHashtags}
 />
