@@ -356,10 +356,20 @@ function mapWPEvent(wp: WPEvent, ministries: Map<number, WPMinistry>): CCFEvent[
 
 async function loadEventsFromWordPress(): Promise<CCFEvent[]> {
   try {
+    // Build Basic Auth header if credentials are provided (used on Vercel
+    // so Wordfence trusts the request). Local dev has no env vars set, so
+    // it fetches anonymously exactly as before.
+    const wpUser = process.env.WP_APP_USER;
+    const wpPass = process.env.WP_APP_PASSWORD;
+    const authHeaders: Record<string, string> =
+      wpUser && wpPass
+        ? { Authorization: 'Basic ' + Buffer.from(`${wpUser}:${wpPass}`).toString('base64') }
+        : {};
+
     // Fetch ministries + events in parallel
     const [minRes, evRes] = await Promise.all([
-      fetch(`${WP_API_BASE}/ministry?per_page=100`, { cache: 'no-store' }),
-      fetch(`${WP_API_BASE}/events?per_page=100&_embed=wp:featuredmedia`, { cache: 'no-store' }),
+      fetch(`${WP_API_BASE}/ministry?per_page=100`, { cache: 'no-store', headers: authHeaders }),
+      fetch(`${WP_API_BASE}/events?per_page=100&_embed=wp:featuredmedia`, { cache: 'no-store', headers: authHeaders }),
     ]);
 
     if (!minRes.ok) throw new Error(`WP ministry fetch failed: HTTP ${minRes.status}`);
